@@ -1,410 +1,632 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DeepFlow - 深度心流</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>DeepFlow Pro</title>
     
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- 字体: Inter (专业级非衬线体) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 核心库 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
+                extend: {
+                    colors: {
+                        obsidian: '#050505',
+                        charcoal: '#0f0f11',
+                        glass: 'rgba(255, 255, 255, 0.03)',
+                        'glass-hover': 'rgba(255, 255, 255, 0.08)',
+                        accent: '#3b82f6', // iOS Blue
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
     <style>
-        /* --- 沉浸式背景与动画 --- */
+        /* --- 极致的基础样式 --- */
         body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: #e2e8f0;
-            height: 100vh;
-            overflow: hidden;
+            background-color: #000000;
+            color: #f5f5f7;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden; /* 禁止整体滚动，应用内部滚动 */
+            overscroll-behavior-y: none; /* 禁止橡皮筋效果 */
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+        /* 隐藏滚动条但保留功能 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* --- 玻璃拟态卡片 --- */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        /* --- 玻璃拟态高级质感 --- */
+        .pro-glass {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
         
-        .glass-input {
-            background: rgba(0, 0, 0, 0.2);
+        .pro-input {
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .pro-input:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            outline: none;
         }
 
-        /* --- 呼吸动画 --- */
-        .breathe-circle {
-            animation: breathe-anim 4s infinite ease-in-out;
+        /* --- 页面切换动画 (iOS 风格) --- */
+        .fade-slide-enter-active, .fade-slide-leave-active {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        @keyframes breathe-anim {
-            0%, 100% { transform: scale(1); opacity: 0.3; }
-            50% { transform: scale(1.5); opacity: 0.6; }
-        }
+        .fade-slide-enter-from { opacity: 0; transform: scale(0.98) translateY(10px); }
+        .fade-slide-leave-to { opacity: 0; transform: scale(1.02); }
 
-        /* --- 过渡动画 --- */
-        .slide-up-enter-active, .slide-up-leave-active {
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        /* --- 动态背景网格 --- */
+        .mesh-bg {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 50%, rgba(29, 78, 216, 0.15), transparent 60%),
+                        radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.1), transparent 50%);
+            top: -50%;
+            left: -50%;
+            z-index: -1;
+            animation: rotateBG 60s linear infinite;
         }
-        .slide-up-enter-from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        .slide-up-leave-to {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
+        @keyframes rotateBG { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Markdown 样式微调 */
+        .markdown-body p { margin-bottom: 0.8em; line-height: 1.6; color: #d1d5db; }
+        .markdown-body strong { color: #fff; font-weight: 600; }
+        .markdown-body ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
     </style>
 </head>
 <body>
 
-<div id="app" class="h-full w-full flex flex-col relative">
+<div id="app" class="h-full w-full flex flex-col md:flex-row relative">
 
-    <header class="px-6 py-4 flex justify-between items-center z-10">
-        <div class="flex items-center gap-2">
-            <i data-lucide="feather" class="text-indigo-300 w-5 h-5"></i>
-            <span class="font-bold tracking-wider text-indigo-100">DeepFlow</span>
+    <!-- 动态背景 -->
+    <div class="mesh-bg"></div>
+
+    <!-- ================= 桌面端侧边栏 / 移动端底部栏 ================= -->
+    <nav class="md:w-72 md:h-full md:border-r md:border-white/10 flex-shrink-0 flex md:flex-col justify-between
+                fixed md:relative bottom-0 w-full md:w-auto h-20 md:h-auto z-50 pro-glass md:bg-transparent md:backdrop-filter-none md:pro-glass-none md:shadow-none
+                bg-black/80 md:bg-transparent">
+        
+        <!-- Logo Area -->
+        <div class="hidden md:flex items-center gap-3 px-8 py-8">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <i data-lucide="layers" class="text-white w-5 h-5"></i>
+            </div>
+            <span class="text-xl font-semibold tracking-tight text-white">DeepFlow</span>
         </div>
-        <div class="flex gap-3">
-            <button v-if="apiKey" @click="view = 'settings'" class="p-2 rounded-full hover:bg-white/10 transition">
-                <i data-lucide="settings" class="w-5 h-5 text-slate-400"></i>
+
+        <!-- Navigation Links -->
+        <div class="flex md:flex-col justify-around md:justify-start md:px-4 md:gap-2 w-full h-full md:h-auto items-center md:items-stretch">
+            <a @click="view = 'dashboard'" :class="navClass('dashboard')" class="nav-item group">
+                <i data-lucide="layout-grid" class="w-6 h-6 md:w-5 md:h-5 transition-transform group-hover:scale-110"></i>
+                <span class="text-[10px] md:text-sm font-medium">总览</span>
+            </a>
+            <a @click="view = 'unstuck'" :class="navClass('unstuck')" class="nav-item group">
+                <i data-lucide="zap" class="w-6 h-6 md:w-5 md:h-5 transition-transform group-hover:scale-110"></i>
+                <span class="text-[10px] md:text-sm font-medium">解冻</span>
+            </a>
+            <a @click="view = 'focus'" :class="navClass('focus')" class="nav-item group">
+                <i data-lucide="timer" class="w-6 h-6 md:w-5 md:h-5 transition-transform group-hover:scale-110"></i>
+                <span class="text-[10px] md:text-sm font-medium">专注</span>
+            </a>
+            <a @click="view = 'sonic'" :class="navClass('sonic')" class="nav-item group">
+                <i data-lucide="headphones" class="w-6 h-6 md:w-5 md:h-5 transition-transform group-hover:scale-110"></i>
+                <span class="text-[10px] md:text-sm font-medium">声景</span>
+            </a>
+        </div>
+
+        <!-- Settings Trigger (Desktop Bottom) -->
+        <div class="hidden md:block p-4">
+            <button @click="showSettings = true" class="flex items-center gap-3 px-4 py-3 w-full rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
+                <i data-lucide="settings-2" class="w-5 h-5"></i>
+                <span class="text-sm">配置</span>
             </button>
         </div>
-    </header>
+    </nav>
 
-    <main class="flex-1 relative overflow-y-auto px-4 pb-24 flex flex-col items-center justify-center">
+    <!-- ================= 主内容区 ================= -->
+    <main class="flex-1 h-full overflow-hidden relative flex flex-col pb-20 md:pb-0">
+        
+        <!-- 移动端顶部 Header -->
+        <header class="md:hidden px-6 py-4 flex justify-between items-center z-10 bg-gradient-to-b from-black/80 to-transparent">
+            <span class="font-bold text-lg">DeepFlow</span>
+            <button @click="showSettings = true" class="p-2 rounded-full bg-white/10 backdrop-blur-md">
+                <i data-lucide="settings-2" class="w-5 h-5 text-slate-300"></i>
+            </button>
+        </header>
 
-        <transition name="slide-up">
-            <div v-if="!apiKey || view === 'settings'" class="w-full max-w-md glass-card rounded-3xl p-8 text-center absolute z-50">
-                <div class="mb-6 bg-indigo-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
-                    <i data-lucide="key" class="w-8 h-8 text-indigo-300"></i>
-                </div>
-                <h2 class="text-2xl font-bold mb-2">配置 Gemini</h2>
-                <p class="text-slate-400 text-sm mb-6">你需要 Google Gemini API Key 来驱动智能助手。<br>Key 仅保存在你的本地设备。</p>
+        <!-- 视图容器 -->
+        <div class="flex-1 overflow-y-auto no-scrollbar p-4 md:p-10 max-w-5xl mx-auto w-full">
+            <transition name="fade-slide" mode="out-in">
                 
-                <input type="password" v-model="tempKey" placeholder="粘贴你的 Key (AIza...)" class="glass-input w-full p-4 rounded-xl mb-4 outline-none focus:border-indigo-500 transition">
-                
-                <div class="flex gap-3">
-                    <button v-if="apiKey" @click="view = 'home'" class="flex-1 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition font-medium">返回</button>
-                    <button @click="saveKey" :disabled="!tempKey" class="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition font-bold text-white disabled:opacity-50">保存并启动</button>
+                <!-- 1. 总览视图 (Dashboard) -->
+                <div v-if="view === 'dashboard'" key="dashboard" class="space-y-8 pt-4">
+                    <div class="space-y-2">
+                        <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
+                            {{ greeting }}
+                        </h1>
+                        <p class="text-slate-400 text-lg">与其焦虑，不如微动。</p>
+                    </div>
+
+                    <!-- 状态卡片网格 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div @click="view = 'unstuck'" class="pro-glass p-6 rounded-3xl group cursor-pointer hover:bg-white/5 transition-colors relative overflow-hidden">
+                            <div class="absolute right-0 top-0 p-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-blue-500/20"></div>
+                            <div class="relative z-10">
+                                <div class="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-4 text-blue-400">
+                                    <i data-lucide="zap" class="w-6 h-6"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold mb-1">启动引擎</h3>
+                                <p class="text-sm text-slate-400">AI 辅助任务拆解，通过微步骤战胜拖延。</p>
+                            </div>
+                        </div>
+
+                        <div @click="view = 'focus'" class="pro-glass p-6 rounded-3xl group cursor-pointer hover:bg-white/5 transition-colors relative overflow-hidden">
+                            <div class="absolute right-0 top-0 p-32 bg-orange-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-orange-500/20"></div>
+                            <div class="relative z-10">
+                                <div class="w-12 h-12 rounded-2xl bg-orange-500/20 flex items-center justify-center mb-4 text-orange-400">
+                                    <i data-lucide="timer" class="w-6 h-6"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold mb-1">深潜模式</h3>
+                                <p class="text-sm text-slate-400">2分钟法则与番茄钟，专为DDL焦虑设计。</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="mt-4">
-                    <button @click="clearKey" v-if="apiKey" class="text-xs text-red-400">清除当前 Key</button>
+
+                <!-- 2. 解冻视图 (Unstuck AI) -->
+                <div v-if="view === 'unstuck'" key="unstuck" class="h-full flex flex-col justify-center max-w-2xl mx-auto">
+                    <!-- 输入状态 -->
+                    <div v-if="aiState === 'input'" class="animate-float">
+                        <h2 class="text-3xl font-bold mb-6 text-center">什么阻挡了你？</h2>
+                        <div class="pro-glass rounded-3xl p-1">
+                            <textarea v-model="userTask" placeholder="例如：我必须写那个报告，但我看着屏幕想吐..." 
+                                class="w-full h-40 bg-transparent text-lg p-6 resize-none outline-none placeholder-slate-600 rounded-2xl"></textarea>
+                            <div class="flex justify-between items-center px-4 pb-4">
+                                <span class="text-xs text-slate-500 font-mono">{{ selectedModel }}</span>
+                                <button @click="generateSteps" :disabled="!userTask || isThinking" 
+                                    class="bg-white text-black px-8 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 flex items-center gap-2">
+                                    <i v-if="isThinking" data-lucide="loader-2" class="animate-spin w-4 h-4"></i>
+                                    <span>{{ isThinking ? '拆解中...' : '帮我启动' }}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 执行状态 -->
+                    <div v-else class="flex flex-col h-full py-4">
+                        <div class="flex-1 flex flex-col items-center justify-center text-center space-y-8">
+                            <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden max-w-md">
+                                <div class="h-full bg-blue-500 transition-all duration-700 ease-out" :style="{ width: progressPercent + '%' }"></div>
+                            </div>
+                            
+                            <div class="pro-glass p-10 rounded-[2rem] border-t border-white/10 shadow-2xl relative overflow-hidden w-full max-w-md">
+                                <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5"></div>
+                                <span class="text-blue-400 font-mono text-xs tracking-widest uppercase mb-4 block">Step {{ currentStep + 1 }}</span>
+                                <h3 class="text-2xl md:text-3xl font-bold leading-snug">
+                                    {{ steps[currentStep] }}
+                                </h3>
+                            </div>
+
+                            <div class="flex gap-4 w-full max-w-md">
+                                <button @click="resetAI" class="flex-1 py-4 rounded-2xl hover:bg-white/5 text-slate-400 transition font-medium">重置</button>
+                                <button @click="nextStep" class="flex-[2] py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/40 transition transform active:scale-95">
+                                    我做到了
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </transition>
 
-        <transition name="slide-up">
-            <div v-if="apiKey && view === 'home'" class="w-full max-w-md flex flex-col gap-4">
-                <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold mb-2">你好。</h1>
-                    <p class="text-slate-400">现在的感觉怎么样？</p>
+                <!-- 3. 专注视图 (Focus Timer) -->
+                <div v-if="view === 'focus'" key="focus" class="h-full flex flex-col items-center justify-center">
+                    <div class="relative mb-12">
+                        <!-- SVG 倒计时圆环 -->
+                        <svg class="w-72 h-72 transform -rotate-90">
+                            <circle cx="144" cy="144" r="136" stroke="rgba(255,255,255,0.05)" stroke-width="4" fill="none" />
+                            <circle cx="144" cy="144" r="136" stroke="#f97316" stroke-width="4" fill="none" 
+                                :stroke-dasharray="854" :stroke-dashoffset="854 - (854 * timerProgress / 100)" stroke-linecap="round"
+                                class="transition-all duration-1000 ease-linear" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-6xl font-mono font-bold tracking-tighter">{{ formatTime(timeLeft) }}</span>
+                            <span class="text-orange-400 text-xs tracking-widest uppercase mt-2 font-semibold">Focus Mode</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button v-if="!timerRunning" @click="startTimer(120)" class="px-8 py-3 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-md font-medium">2分钟启动</button>
+                        <button v-if="!timerRunning" @click="startTimer(1500)" class="px-8 py-3 rounded-full bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-900/30 transition font-bold">25分钟专注</button>
+                        <button v-if="timerRunning" @click="stopTimer" class="px-10 py-3 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30 transition border border-red-500/30">停止</button>
+                    </div>
                 </div>
 
-                <button @click="view = 'chat'" class="glass-card p-6 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition group">
-                    <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition">
-                        <i data-lucide="zap" class="w-6 h-6 text-blue-300"></i>
-                    </div>
-                    <div class="text-left">
-                        <div class="font-bold text-lg">我卡住了 (启动辅助)</div>
-                        <div class="text-xs text-slate-400">把大任务切碎，喂给大脑</div>
-                    </div>
-                </button>
-
-                <button @click="view = 'timer'" class="glass-card p-6 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition group">
-                    <div class="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center group-hover:scale-110 transition">
-                        <i data-lucide="timer" class="w-6 h-6 text-orange-300"></i>
-                    </div>
-                    <div class="text-left">
-                        <div class="font-bold text-lg">我不想做 (2分钟法则)</div>
-                        <div class="text-xs text-slate-400">骗过大脑，先做两分钟</div>
-                    </div>
-                </button>
-
-                <button @click="view = 'breathe'" class="glass-card p-6 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition group">
-                    <div class="w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center group-hover:scale-110 transition">
-                        <i data-lucide="wind" class="w-6 h-6 text-teal-300"></i>
-                    </div>
-                    <div class="text-left">
-                        <div class="font-bold text-lg">我很焦虑 (SOS)</div>
-                        <div class="text-xs text-slate-400">深呼吸，回到当下</div>
-                    </div>
-                </button>
-            </div>
-        </transition>
-
-        <transition name="slide-up">
-            <div v-if="view === 'chat'" class="w-full max-w-lg h-full flex flex-col">
-                <div class="flex-1 overflow-y-auto px-2 py-4">
+                <!-- 4. 声景视图 (Sonic Scapes) -->
+                <div v-if="view === 'sonic'" key="sonic" class="h-full flex flex-col items-center justify-center max-w-lg mx-auto">
+                    <h2 class="text-2xl font-bold mb-8 text-center">神经声景</h2>
                     
-                    <div v-if="chatStage === 'input'" class="flex flex-col h-full justify-center">
-                        <h2 class="text-2xl font-bold mb-4 text-center text-blue-200">什么让你无法开始？</h2>
-                        <div class="relative">
-                            <textarea v-model="userTask" placeholder="例如：我想洗澡，但我就是不想动..." class="glass-input w-full h-40 p-5 rounded-2xl resize-none text-lg mb-4 focus:border-blue-500"></textarea>
-                            <button @click="toggleSpeech" :class="{'text-red-400 animate-pulse': isListening}" class="absolute bottom-8 right-4 p-2 rounded-full bg-slate-800/50 hover:bg-slate-700 transition">
-                                <i data-lucide="mic" class="w-5 h-5"></i>
+                    <div class="grid grid-cols-1 gap-4 w-full">
+                        <!-- 粉红噪音卡片 -->
+                        <div class="pro-glass p-6 rounded-2xl flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center">
+                                    <i data-lucide="waves" class="w-5 h-5 text-pink-400"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">Pink Noise</div>
+                                    <div class="text-xs text-slate-500">模拟雨声，平复焦虑</div>
+                                </div>
+                            </div>
+                            <button @click="toggleAudio('pink')" :class="audioState.pink ? 'bg-pink-500 text-white' : 'bg-white/5 text-slate-400'" class="p-3 rounded-full transition-all">
+                                <i :data-lucide="audioState.pink ? 'pause' : 'play'" class="w-5 h-5 fill-current"></i>
                             </button>
                         </div>
-                        
-                        <button @click="callGemini" :disabled="!userTask || isLoading" class="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg shadow-lg shadow-blue-900/50 transition disabled:opacity-50 flex justify-center items-center gap-2">
-                            <span v-if="isLoading" class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></span>
-                            <span v-else>帮我切碎它</span>
-                        </button>
-                    </div>
 
-                    <div v-if="chatStage === 'steps'" class="text-center pt-10">
-                        <div class="mb-8 flex justify-center">
-                             <div class="w-20 h-1 rounded-full bg-slate-700 overflow-hidden">
-                                 <div class="h-full bg-green-400 transition-all duration-500" :style="{width: progress + '%'}"></div>
-                             </div>
+                        <!-- 布朗噪音卡片 -->
+                        <div class="pro-glass p-6 rounded-2xl flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-amber-900/40 flex items-center justify-center">
+                                    <i data-lucide="zap-off" class="w-5 h-5 text-amber-500"></i>
+                                </div>
+                                <div>
+                                    <div class="font-medium">Brown Noise</div>
+                                    <div class="text-xs text-slate-500">低频轰鸣，深度屏蔽</div>
+                                </div>
+                            </div>
+                            <button @click="toggleAudio('brown')" :class="audioState.brown ? 'bg-amber-600 text-white' : 'bg-white/5 text-slate-400'" class="p-3 rounded-full transition-all">
+                                <i :data-lucide="audioState.brown ? 'pause' : 'play'" class="w-5 h-5 fill-current"></i>
+                            </button>
                         </div>
-
-                        <div class="glass-card p-8 rounded-3xl mb-8 border-t-4 border-blue-400 min-h-[200px] flex flex-col justify-center items-center relative overflow-hidden">
-                            <div class="absolute top-0 left-0 w-full h-full bg-blue-500/5"></div>
-                            <div class="text-sm text-blue-300 font-mono mb-2">STEP {{ currentStep + 1 }}</div>
-                            <h3 class="text-3xl font-bold leading-tight relative z-10">{{ steps[currentStep] }}</h3>
-                        </div>
-
-                        <button @click="completeStep" class="w-full py-5 rounded-2xl bg-green-600 hover:bg-green-500 text-white font-bold text-xl shadow-lg shadow-green-900/50 transition active:scale-95">
-                            搞定，下一步
-                        </button>
-                        
-                        <button @click="chatStage = 'input'; userTask = ''; steps = []" class="mt-6 text-slate-500 hover:text-white text-sm">
-                            放弃 / 重新开始
-                        </button>
                     </div>
-                </div>
-            </div>
-        </transition>
-
-        <transition name="slide-up">
-            <div v-if="view === 'timer'" class="w-full max-w-md flex flex-col items-center justify-center h-full text-center">
-                <div class="mb-8">
-                    <h2 class="text-2xl font-bold mb-2">只做 2 分钟</h2>
-                    <p class="text-slate-400 text-sm px-6">如果你做完2分钟想停下来，完全可以。<br>通常开始之后，你就不会停了。</p>
-                </div>
-                
-                <div class="relative w-64 h-64 rounded-full border-8 border-slate-700 flex items-center justify-center mb-12">
-                    <svg class="absolute top-0 left-0 w-full h-full -rotate-90" style="overflow: visible;">
-                        <circle cx="128" cy="128" r="124" fill="none" stroke="#f97316" stroke-width="8" 
-                            :stroke-dasharray="779" 
-                            :stroke-dashoffset="779 - (779 * timerProgress / 100)" 
-                            stroke-linecap="round"
-                            class="transition-all duration-1000 ease-linear"
-                        />
-                    </svg>
-                    <div class="text-6xl font-mono font-bold">{{ formatTime(timeLeft) }}</div>
+                    
+                    <p class="mt-8 text-xs text-slate-500 text-center max-w-xs">
+                        * 使用 Web Audio API 本地生成，不消耗流量，隐私安全。建议佩戴耳机。
+                    </p>
                 </div>
 
-                <button v-if="!timerRunning" @click="startTimer" class="w-48 py-4 rounded-full bg-orange-600 hover:bg-orange-500 text-white font-bold text-lg shadow-lg shadow-orange-900/50 transition">
-                    开始
-                </button>
-                <button v-else @click="resetTimer" class="w-48 py-4 rounded-full bg-slate-700 hover:bg-slate-600 text-white font-bold text-lg transition">
-                    停止
-                </button>
-            </div>
-        </transition>
-
-        <transition name="slide-up">
-            <div v-if="view === 'breathe'" class="w-full max-w-md flex flex-col items-center justify-center h-full">
-                <div class="relative w-64 h-64 flex items-center justify-center mb-12">
-                    <div class="absolute w-full h-full rounded-full bg-teal-500/30 blur-2xl breathe-circle"></div>
-                    <div class="absolute w-48 h-48 rounded-full bg-teal-400/40 blur-xl breathe-circle" style="animation-delay: -1s"></div>
-                    <div class="relative z-10 text-2xl font-bold text-teal-100 tracking-widest">
-                        吸 ... 呼
-                    </div>
-                </div>
-                <p class="text-slate-400 text-center mb-8 px-8">
-                    跟着光圈的节奏。<br>慢慢来，你现在很安全。
-                </p>
-                <button @click="view = 'home'" class="px-8 py-3 rounded-full border border-slate-600 text-slate-400 hover:text-white hover:border-white transition">
-                    我好点了
-                </button>
-            </div>
-        </transition>
-
+            </transition>
+        </div>
     </main>
 
-    <nav v-if="apiKey && view !== 'settings'" class="glass-card border-t border-white/5 px-6 py-4 flex justify-around items-center shrink-0 z-20">
-        <button @click="view = 'home'" :class="view === 'home' ? 'text-indigo-400' : 'text-slate-500'" class="flex flex-col items-center gap-1">
-            <i data-lucide="home" class="w-6 h-6"></i>
-            <span class="text-[10px]">首页</span>
-        </button>
-        <button @click="view = 'chat'" :class="view === 'chat' ? 'text-blue-400' : 'text-slate-500'" class="flex flex-col items-center gap-1">
-            <i data-lucide="layers" class="w-6 h-6"></i>
-            <span class="text-[10px]">拆解</span>
-        </button>
-        <button @click="view = 'timer'" :class="view === 'timer' ? 'text-orange-400' : 'text-slate-500'" class="flex flex-col items-center gap-1">
-            <i data-lucide="clock" class="w-6 h-6"></i>
-            <span class="text-[10px]">专注</span>
-        </button>
-    </nav>
+    <!-- ================= 设置模态框 (Neural Engine) ================= -->
+    <transition name="fade-slide">
+        <div v-if="showSettings || !apiKey" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4">
+            <div class="w-full max-w-lg pro-glass bg-charcoal rounded-3xl p-8 border border-white/10 shadow-2xl transform transition-all">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-xl font-bold flex items-center gap-2">
+                        <i data-lucide="cpu" class="text-blue-500"></i> Neural Engine
+                    </h2>
+                    <button v-if="apiKey" @click="showSettings = false" class="p-2 hover:bg-white/10 rounded-full transition">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- API Key Input -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Gemini API Key</label>
+                        <input type="password" v-model="tempKey" placeholder="sk-..." class="pro-input w-full p-4 rounded-xl text-white">
+                        <p class="text-[10px] text-slate-500">密钥仅存储在您的设备本地 (Local Storage)。</p>
+                    </div>
+
+                    <!-- Model Selection -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">选择模型</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click="selectedModel = 'gemini-1.5-flash'" 
+                                :class="selectedModel === 'gemini-1.5-flash' ? 'bg-blue-600 border-blue-500' : 'bg-white/5 border-transparent hover:bg-white/10'"
+                                class="p-4 rounded-xl border text-left transition-all">
+                                <div class="font-bold text-sm mb-1">Flash 1.5</div>
+                                <div class="text-[10px] opacity-70">极速响应，适合日常</div>
+                            </button>
+                            <button @click="selectedModel = 'gemini-1.5-pro'" 
+                                :class="selectedModel === 'gemini-1.5-pro' ? 'bg-purple-600 border-purple-500' : 'bg-white/5 border-transparent hover:bg-white/10'"
+                                class="p-4 rounded-xl border text-left transition-all">
+                                <div class="font-bold text-sm mb-1">Pro 1.5</div>
+                                <div class="text-[10px] opacity-70">深度逻辑，适合复杂任务</div>
+                            </button>
+                        </div>
+                        <!-- Custom Model Input -->
+                        <div class="mt-2 relative">
+                             <input type="text" v-model="customModel" placeholder="或输入自定义模型 ID (如 gemini-1.0-pro)" 
+                                @input="selectedModel = customModel"
+                                class="pro-input w-full p-3 pl-10 rounded-lg text-sm text-slate-300">
+                             <i data-lucide="terminal" class="absolute left-3 top-3 w-4 h-4 text-slate-500"></i>
+                        </div>
+                    </div>
+
+                    <button @click="saveSettings" class="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-slate-200 transition mt-4">
+                        保存配置
+                    </button>
+                </div>
+            </div>
+        </div>
+    </transition>
 
 </div>
 
 <script>
-    const { createApp, ref, computed, onMounted, watch } = Vue;
+    const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
 
     createApp({
         setup() {
-            // --- 状态 ---
-            const apiKey = ref(localStorage.getItem('gemini_key') || '');
-            const tempKey = ref('');
-            const view = ref('home'); // home, settings, chat, timer, breathe
-            
-            // 聊天模块
-            const chatStage = ref('input'); // input, steps
+            // --- 状态管理 ---
+            const view = ref('dashboard');
+            const showSettings = ref(false);
+            const apiKey = ref(localStorage.getItem('df_key') || '');
+            const tempKey = ref(apiKey.value);
+            const selectedModel = ref(localStorage.getItem('df_model') || 'gemini-1.5-flash');
+            const customModel = ref('');
+
+            // AI 相关
             const userTask = ref('');
             const steps = ref([]);
             const currentStep = ref(0);
-            const isLoading = ref(false);
-            const isListening = ref(false);
+            const aiState = ref('input'); // input, executing
+            const isThinking = ref(false);
 
-            // 计时器模块
-            const timeLeft = ref(120); // 2分钟 = 120秒
+            // Timer 相关
+            const timeLeft = ref(0);
+            const timerMax = ref(0);
             const timerRunning = ref(false);
             let timerInterval = null;
 
-            // Lucide Icons 渲染
-            const renderIcons = () => {
-                setTimeout(() => lucide.createIcons(), 100);
-            };
-            watch(view, renderIcons);
-            onMounted(renderIcons);
+            // Audio 相关
+            const audioCtx = ref(null);
+            const audioState = ref({ pink: false, brown: false });
+            const oscillators = {}; 
 
-            // --- API 管理 ---
-            const saveKey = () => {
-                localStorage.setItem('gemini_key', tempKey.value);
+            // --- 问候语 ---
+            const greeting = computed(() => {
+                const hour = new Date().getHours();
+                if (hour < 6) return '深夜好，';
+                if (hour < 11) return '早上好，';
+                if (hour < 14) return '中午好，';
+                if (hour < 18) return '下午好，';
+                return '晚上好，';
+            });
+
+            // --- UI 辅助 ---
+            const navClass = (v) => {
+                const isActive = view.value === v;
+                return `flex md:flex-row flex-col items-center gap-2 md:px-4 md:py-3 rounded-xl transition-all duration-300 ${
+                    isActive ? 'text-white md:bg-white/10' : 'text-slate-500 hover:text-slate-300'
+                }`;
+            };
+
+            const refreshIcons = () => {
+                nextTick(() => lucide.createIcons());
+            };
+            watch(view, refreshIcons);
+            onMounted(refreshIcons);
+
+            // --- 设置逻辑 ---
+            const saveSettings = () => {
+                localStorage.setItem('df_key', tempKey.value);
+                localStorage.setItem('df_model', selectedModel.value);
                 apiKey.value = tempKey.value;
-                view.value = 'home';
-            };
-            const clearKey = () => {
-                localStorage.removeItem('gemini_key');
-                apiKey.value = '';
+                showSettings.value = false;
             };
 
-            // --- Gemini 核心逻辑 ---
-            const callGemini = async () => {
-                isLoading.value = true;
-                const prompt = `你是一个专业的执行功能障碍辅助治疗师。用户会告诉你一个他们想做但无法开始的任务。
-                请将这个任务拆解为 4-7 个极度微小、低门槛的步骤。第一步必须是物理上的简单动作（如“放下手机”、“坐起来”）。
-                请严格返回一个JSON数组字符串，不要包含任何Markdown标记或其他文字。
-                用户任务：${userTask.value}
-                返回格式示例：["放下手机", "深呼吸", "走到桌边"]`;
+            // --- AI 核心逻辑 ---
+            const generateSteps = async () => {
+                isThinking.value = true;
+                
+                // 模拟 Prompt Engineering (CBT 疗法)
+                const systemPrompt = `你是一个专业的认知行为治疗(CBT)辅助AI。目标：帮助执行功能障碍用户启动。
+                策略：将任务拆解为${userTask.value.length > 20 ? '5-7' : '3-5'}个微小步骤。
+                规则：
+                1. 第一步必须是物理上的、无脑的动作（如"坐起来"、"打开电脑"）。
+                2. 语气简洁、有力、不废话。
+                3. 请只返回纯 JSON 字符串数组。
+                任务：${userTask.value}`;
 
                 try {
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.value}`;
-                    
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel.value}:generateContent?key=${apiKey.value}`;
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }]
+                            contents: [{ parts: [{ text: systemPrompt }] }]
                         })
                     });
-
+                    
                     const data = await response.json();
                     if(data.error) throw new Error(data.error.message);
 
                     let text = data.candidates[0].content.parts[0].text;
-                    // 清理可能存在的 markdown 符号
+                    // 清理 markdown
                     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
                     
                     steps.value = JSON.parse(text);
-                    chatStage.value = 'steps';
+                    aiState.value = 'executing';
                     currentStep.value = 0;
 
                 } catch (e) {
-                    alert('AI 思考失败: ' + e.message);
+                    alert('Neural Engine Error: ' + e.message);
                 } finally {
-                    isLoading.value = false;
+                    isThinking.value = false;
                 }
             };
 
-            // --- 语音输入 ---
-            const toggleSpeech = () => {
-                if (!('webkitSpeechRecognition' in window)) {
-                    alert("你的浏览器不支持语音输入，请尝试使用 Chrome 或 Safari。");
-                    return;
-                }
-                if (isListening.value) return;
-
-                const recognition = new webkitSpeechRecognition();
-                recognition.lang = 'zh-CN';
-                recognition.start();
-                isListening.value = true;
-
-                recognition.onresult = (event) => {
-                    userTask.value += event.results[0][0].transcript;
-                    isListening.value = false;
-                };
-                recognition.onerror = () => isListening.value = false;
-                recognition.onend = () => isListening.value = false;
-            };
-
-            // --- 步骤控制 ---
-            const completeStep = () => {
-                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            const nextStep = () => {
+                confetti({
+                    particleCount: 80,
+                    spread: 60,
+                    origin: { y: 0.7 },
+                    colors: ['#3b82f6', '#ffffff']
+                });
+                
                 if (currentStep.value < steps.value.length - 1) {
-                    setTimeout(() => currentStep.value++, 600);
+                    setTimeout(() => currentStep.value++, 400);
                 } else {
-                    alert('太棒了！你完成了启动！');
-                    view.value = 'home';
-                    chatStage.value = 'input';
-                    userTask.value = '';
+                    setTimeout(() => {
+                        alert("流程结束。你已经启动了，保持惯性。");
+                        resetAI();
+                    }, 1000);
                 }
             };
-            const progress = computed(() => {
-                if (!steps.value.length) return 0;
+
+            const resetAI = () => {
+                aiState.value = 'input';
+                steps.value = [];
+                userTask.value = '';
+            };
+
+            const progressPercent = computed(() => {
+                if(steps.value.length === 0) return 0;
                 return ((currentStep.value + 1) / steps.value.length) * 100;
             });
 
             // --- 计时器逻辑 ---
+            const startTimer = (seconds) => {
+                timerMax.value = seconds;
+                timeLeft.value = seconds;
+                timerRunning.value = true;
+                timerInterval = setInterval(() => {
+                    if (timeLeft.value > 0) timeLeft.value--;
+                    else stopTimer(true);
+                }, 1000);
+            };
+            const stopTimer = (finished = false) => {
+                clearInterval(timerInterval);
+                timerRunning.value = false;
+                if(finished) {
+                    confetti();
+                    // 播放一个柔和的结束音（可选）
+                }
+            };
             const formatTime = (s) => {
                 const m = Math.floor(s / 60);
                 const sec = s % 60;
-                return `${m}:${sec < 10 ? '0'+sec : sec}`;
+                return `${m < 10 ? '0'+m : m}:${sec < 10 ? '0'+sec : sec}`;
             };
-            const timerProgress = computed(() => ((120 - timeLeft.value) / 120) * 100);
-            
-            const startTimer = () => {
-                if (timerRunning.value) return;
-                timerRunning.value = true;
-                timeLeft.value = 120;
-                timerInterval = setInterval(() => {
-                    if (timeLeft.value > 0) {
-                        timeLeft.value--;
-                    } else {
-                        resetTimer();
-                        confetti();
-                        alert("2分钟结束！你想停下还是继续？都由你决定。");
+            const timerProgress = computed(() => {
+                if(timerMax.value === 0) return 0;
+                return ((timerMax.value - timeLeft.value) / timerMax.value) * 100;
+            });
+
+            // --- 声景逻辑 (Web Audio API) ---
+            const initAudio = () => {
+                if(!audioCtx.value) audioCtx.value = new (window.AudioContext || window.webkitAudioContext)();
+            };
+
+            const createNoise = (type) => {
+                initAudio();
+                const bufferSize = 2 * audioCtx.value.sampleRate;
+                const noiseBuffer = audioCtx.value.createBuffer(1, bufferSize, audioCtx.value.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    if(type === 'pink') {
+                        output[i] = (lastOut + (0.02 * white)) / 1.02;
+                        lastOut = output[i];
+                        output[i] *= 3.5; 
+                    } else { // brown
+                         output[i] = (lastOut + (0.02 * white)) / 1.02;
+                         lastOut = output[i];
+                         output[i] *= 3.5; // 简化版模拟
                     }
-                }, 1000);
+                }
+                // 真正的 Brown Noise 算法略复杂，这里用简化的滤波器模拟
+                // 为确保单文件简洁性，使用 CreateScriptProcessor 或 Worklet 较复杂
+                // 这里我们使用一种简单的高斯白噪+低通滤波器方案来模拟 Brown Noise
+                
+                const noise = audioCtx.value.createBufferSource();
+                noise.buffer = noiseBuffer;
+                noise.loop = true;
+                
+                // 滤波器
+                const filter = audioCtx.value.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = type === 'brown' ? 150 : 500; // Brown更低沉
+
+                // 增益 (音量)
+                const gain = audioCtx.value.createGain();
+                gain.gain.value = 0.05; // 初始音量很小，避免惊吓
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.value.destination);
+                
+                return { node: noise, gain: gain };
             };
-            const resetTimer = () => {
-                clearInterval(timerInterval);
-                timerRunning.value = false;
-                timeLeft.value = 120;
+            
+            // 简单的噪音生成器状态变量
+            let lastOut = 0;
+
+            const toggleAudio = (type) => {
+                initAudio();
+                if(audioCtx.value.state === 'suspended') audioCtx.value.resume();
+
+                if (audioState.value[type]) {
+                    // 停止
+                    oscillators[type].node.stop();
+                    oscillators[type] = null;
+                    audioState.value[type] = false;
+                } else {
+                    // 开始
+                    // 先关掉其他的
+                    if(type === 'pink' && audioState.value.brown) toggleAudio('brown');
+                    if(type === 'brown' && audioState.value.pink) toggleAudio('pink');
+
+                    const noiseObj = createNoise(type);
+                    noiseObj.node.start();
+                    
+                    // 淡入
+                    noiseObj.gain.gain.exponentialRampToValueAtTime(0.1, audioCtx.value.currentTime + 2);
+                    
+                    oscillators[type] = noiseObj;
+                    audioState.value[type] = true;
+                }
             };
 
             return {
-                apiKey, tempKey, view, saveKey, clearKey,
-                // Chat
-                chatStage, userTask, steps, currentStep, isLoading, callGemini, completeStep, progress,
-                // Speech
-                toggleSpeech, isListening,
+                view, showSettings, apiKey, tempKey, selectedModel, customModel, saveSettings,
+                greeting, navClass,
+                // AI
+                userTask, generateSteps, steps, currentStep, aiState, isThinking, resetAI, nextStep, progressPercent,
                 // Timer
-                timeLeft, timerRunning, startTimer, resetTimer, formatTime, timerProgress
+                timeLeft, timerRunning, startTimer, stopTimer, formatTime, timerProgress,
+                // Audio
+                audioState, toggleAudio
             };
         }
     }).mount('#app');
