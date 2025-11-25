@@ -1,632 +1,602 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="dark">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>DeepFlow Pro</title>
+    <title>FlowState</title>
     
-    <!-- 字体: Inter (专业级非衬线体) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- 核心库 -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                fontFamily: { sans: ['Inter', 'sans-serif'] },
-                extend: {
-                    colors: {
-                        obsidian: '#050505',
-                        charcoal: '#0f0f11',
-                        glass: 'rgba(255, 255, 255, 0.03)',
-                        'glass-hover': 'rgba(255, 255, 255, 0.08)',
-                        accent: '#3b82f6', // iOS Blue
-                    },
-                    animation: {
-                        'float': 'float 8s ease-in-out infinite',
-                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* --- 极致的基础样式 --- */
-        body {
-            background-color: #000000;
-            color: #f5f5f7;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            overflow: hidden; /* 禁止整体滚动，应用内部滚动 */
-            overscroll-behavior-y: none; /* 禁止橡皮筋效果 */
+        /* --- 核心视觉定义 --- */
+        :root {
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-highlight: rgba(255, 255, 255, 0.1);
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --app-bg: #050505;
         }
 
-        /* 隐藏滚动条但保留功能 */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body {
+            background-color: var(--app-bg);
+            font-family: 'Inter', sans-serif;
+            color: #f8fafc;
+            overflow: hidden; /* 禁止滚动，用内部容器滚动 */
+            -webkit-tap-highlight-color: transparent;
+        }
 
-        /* --- 玻璃拟态高级质感 --- */
-        .pro-glass {
-            background: rgba(20, 20, 20, 0.6);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        /* 动态极光背景 */
+        .aurora-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1;
+            background: radial-gradient(circle at 50% 10%, #1e1b4b, transparent 60%),
+                        radial-gradient(circle at 90% 60%, #312e81, transparent 50%),
+                        radial-gradient(circle at 10% 50%, #0f172a, transparent 50%);
+            background-size: 200% 200%;
+            animation: auroraFlow 20s ease-in-out infinite alternate;
+        }
+        @keyframes auroraFlow {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        /* 玻璃拟态组件 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
         
-        .pro-input {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .glass-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.05);
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-        .pro-input:focus {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(59, 130, 246, 0.5);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-            outline: none;
+        .glass-btn:active {
+            transform: scale(0.96);
+        }
+        .glass-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
         }
 
-        /* --- 页面切换动画 (iOS 风格) --- */
+        /* 液态气泡动画 */
+        .liquid-bubble {
+            animation: floatBubble 6s ease-in-out infinite;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: radial-gradient(120% 120% at 50% 50%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(8px);
+        }
+        @keyframes floatBubble {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.02); }
+        }
+
+        /* 呼吸灯按钮 (Unfreeze) */
+        .panic-btn-glow {
+            box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+            animation: pulse-blue 2s infinite cubic-bezier(0.66, 0, 0, 1);
+        }
+        @keyframes pulse-blue {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(99, 102, 241, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+
+        /* 滑块样式自定义 */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px; width: 24px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            margin-top: -10px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+        }
+
+        /* 页面切换动画 */
         .fade-slide-enter-active, .fade-slide-leave-active {
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .fade-slide-enter-from { opacity: 0; transform: scale(0.98) translateY(10px); }
-        .fade-slide-leave-to { opacity: 0; transform: scale(1.02); }
-
-        /* --- 动态背景网格 --- */
-        .mesh-bg {
-            position: absolute;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 50% 50%, rgba(29, 78, 216, 0.15), transparent 60%),
-                        radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.1), transparent 50%);
-            top: -50%;
-            left: -50%;
-            z-index: -1;
-            animation: rotateBG 60s linear infinite;
-        }
-        @keyframes rotateBG { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .fade-slide-enter-from { opacity: 0; transform: translateY(20px) scale(0.98); }
+        .fade-slide-leave-to { opacity: 0; transform: translateY(-20px) scale(0.98); }
 
         /* Markdown 样式微调 */
-        .markdown-body p { margin-bottom: 0.8em; line-height: 1.6; color: #d1d5db; }
-        .markdown-body strong { color: #fff; font-weight: 600; }
-        .markdown-body ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .prose p { margin-bottom: 0.5rem; line-height: 1.6; }
+        .prose strong { color: #e0e7ff; font-weight: 600; }
+        
+        /* 隐藏滚动条但保留功能 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body>
 
-<div id="app" class="h-full w-full flex flex-col md:flex-row relative">
+<div id="app" class="h-screen w-screen flex flex-col relative overflow-hidden text-slate-200">
+    
+    <div class="aurora-bg"></div>
 
-    <!-- 动态背景 -->
-    <div class="mesh-bg"></div>
-
-    <!-- ================= 桌面端侧边栏 / 移动端底部栏 ================= -->
-    <nav class="md:w-72 md:h-full md:border-r md:border-white/10 flex-shrink-0 flex md:flex-col justify-between
-                fixed md:relative bottom-0 w-full md:w-auto h-20 md:h-auto z-50 pro-glass md:bg-transparent md:backdrop-filter-none md:pro-glass-none md:shadow-none
-                bg-black/80 md:bg-transparent">
-        
-        <!-- Logo Area -->
-        <div class="hidden md:flex items-center gap-3 px-8 py-8">
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                <i data-lucide="layers" class="text-white w-5 h-5"></i>
-            </div>
-            <span class="text-xl font-semibold tracking-tight text-white">DeepFlow</span>
-        </div>
-
-        <!-- Navigation Links -->
-        <div class="flex md:flex-col justify-around md:justify-start md:px-4 md:gap-2 w-full h-full md:h-auto items-center md:items-stretch">
-            <a @click="view = 'dashboard'" :class="navClass('dashboard')" class="nav-item group">
-                <i data-lucide="layout-grid" class="w-6 h-6 md:w-5 md:h-5 transition-transform group-hover:scale-110"></i>
-                <span class="text-[10px] md:text-sm font-medium">总览</span>
-            </a>
-            <a @click="view = 'unstuck'" :class="navClass('unstuck')" class="nav-item group">
-                <i data-lucide="zap" class="w-6 h-6 md:w-5 md:h-5 transition-transform group-hover:scale-110"></i>
-                <span class="text-[10px] md:text-sm font-medium">解冻</span>
-            </a>
-            <a @click="view = 'focus'" :class="navClass('focus')" class="nav-item group">
-                <i data-lucide="timer" class="w-6 h-6 md:w-5 md:h-5 transition-transform group-hover:scale-110"></i>
-                <span class="text-[10px] md:text-sm font-medium">专注</span>
-            </a>
-            <a @click="view = 'sonic'" :class="navClass('sonic')" class="nav-item group">
-                <i data-lucide="headphones" class="w-6 h-6 md:w-5 md:h-5 transition-transform group-hover:scale-110"></i>
-                <span class="text-[10px] md:text-sm font-medium">声景</span>
-            </a>
-        </div>
-
-        <!-- Settings Trigger (Desktop Bottom) -->
-        <div class="hidden md:block p-4">
-            <button @click="showSettings = true" class="flex items-center gap-3 px-4 py-3 w-full rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
-                <i data-lucide="settings-2" class="w-5 h-5"></i>
-                <span class="text-sm">配置</span>
-            </button>
-        </div>
-    </nav>
-
-    <!-- ================= 主内容区 ================= -->
-    <main class="flex-1 h-full overflow-hidden relative flex flex-col pb-20 md:pb-0">
-        
-        <!-- 移动端顶部 Header -->
-        <header class="md:hidden px-6 py-4 flex justify-between items-center z-10 bg-gradient-to-b from-black/80 to-transparent">
-            <span class="font-bold text-lg">DeepFlow</span>
-            <button @click="showSettings = true" class="p-2 rounded-full bg-white/10 backdrop-blur-md">
-                <i data-lucide="settings-2" class="w-5 h-5 text-slate-300"></i>
-            </button>
-        </header>
-
-        <!-- 视图容器 -->
-        <div class="flex-1 overflow-y-auto no-scrollbar p-4 md:p-10 max-w-5xl mx-auto w-full">
-            <transition name="fade-slide" mode="out-in">
-                
-                <!-- 1. 总览视图 (Dashboard) -->
-                <div v-if="view === 'dashboard'" key="dashboard" class="space-y-8 pt-4">
-                    <div class="space-y-2">
-                        <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
-                            {{ greeting }}
-                        </h1>
-                        <p class="text-slate-400 text-lg">与其焦虑，不如微动。</p>
-                    </div>
-
-                    <!-- 状态卡片网格 -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div @click="view = 'unstuck'" class="pro-glass p-6 rounded-3xl group cursor-pointer hover:bg-white/5 transition-colors relative overflow-hidden">
-                            <div class="absolute right-0 top-0 p-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-blue-500/20"></div>
-                            <div class="relative z-10">
-                                <div class="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-4 text-blue-400">
-                                    <i data-lucide="zap" class="w-6 h-6"></i>
-                                </div>
-                                <h3 class="text-xl font-semibold mb-1">启动引擎</h3>
-                                <p class="text-sm text-slate-400">AI 辅助任务拆解，通过微步骤战胜拖延。</p>
-                            </div>
-                        </div>
-
-                        <div @click="view = 'focus'" class="pro-glass p-6 rounded-3xl group cursor-pointer hover:bg-white/5 transition-colors relative overflow-hidden">
-                            <div class="absolute right-0 top-0 p-32 bg-orange-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-orange-500/20"></div>
-                            <div class="relative z-10">
-                                <div class="w-12 h-12 rounded-2xl bg-orange-500/20 flex items-center justify-center mb-4 text-orange-400">
-                                    <i data-lucide="timer" class="w-6 h-6"></i>
-                                </div>
-                                <h3 class="text-xl font-semibold mb-1">深潜模式</h3>
-                                <p class="text-sm text-slate-400">2分钟法则与番茄钟，专为DDL焦虑设计。</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. 解冻视图 (Unstuck AI) -->
-                <div v-if="view === 'unstuck'" key="unstuck" class="h-full flex flex-col justify-center max-w-2xl mx-auto">
-                    <!-- 输入状态 -->
-                    <div v-if="aiState === 'input'" class="animate-float">
-                        <h2 class="text-3xl font-bold mb-6 text-center">什么阻挡了你？</h2>
-                        <div class="pro-glass rounded-3xl p-1">
-                            <textarea v-model="userTask" placeholder="例如：我必须写那个报告，但我看着屏幕想吐..." 
-                                class="w-full h-40 bg-transparent text-lg p-6 resize-none outline-none placeholder-slate-600 rounded-2xl"></textarea>
-                            <div class="flex justify-between items-center px-4 pb-4">
-                                <span class="text-xs text-slate-500 font-mono">{{ selectedModel }}</span>
-                                <button @click="generateSteps" :disabled="!userTask || isThinking" 
-                                    class="bg-white text-black px-8 py-3 rounded-full font-bold hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 flex items-center gap-2">
-                                    <i v-if="isThinking" data-lucide="loader-2" class="animate-spin w-4 h-4"></i>
-                                    <span>{{ isThinking ? '拆解中...' : '帮我启动' }}</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 执行状态 -->
-                    <div v-else class="flex flex-col h-full py-4">
-                        <div class="flex-1 flex flex-col items-center justify-center text-center space-y-8">
-                            <div class="w-full bg-white/5 h-1 rounded-full overflow-hidden max-w-md">
-                                <div class="h-full bg-blue-500 transition-all duration-700 ease-out" :style="{ width: progressPercent + '%' }"></div>
-                            </div>
-                            
-                            <div class="pro-glass p-10 rounded-[2rem] border-t border-white/10 shadow-2xl relative overflow-hidden w-full max-w-md">
-                                <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5"></div>
-                                <span class="text-blue-400 font-mono text-xs tracking-widest uppercase mb-4 block">Step {{ currentStep + 1 }}</span>
-                                <h3 class="text-2xl md:text-3xl font-bold leading-snug">
-                                    {{ steps[currentStep] }}
-                                </h3>
-                            </div>
-
-                            <div class="flex gap-4 w-full max-w-md">
-                                <button @click="resetAI" class="flex-1 py-4 rounded-2xl hover:bg-white/5 text-slate-400 transition font-medium">重置</button>
-                                <button @click="nextStep" class="flex-[2] py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/40 transition transform active:scale-95">
-                                    我做到了
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. 专注视图 (Focus Timer) -->
-                <div v-if="view === 'focus'" key="focus" class="h-full flex flex-col items-center justify-center">
-                    <div class="relative mb-12">
-                        <!-- SVG 倒计时圆环 -->
-                        <svg class="w-72 h-72 transform -rotate-90">
-                            <circle cx="144" cy="144" r="136" stroke="rgba(255,255,255,0.05)" stroke-width="4" fill="none" />
-                            <circle cx="144" cy="144" r="136" stroke="#f97316" stroke-width="4" fill="none" 
-                                :stroke-dasharray="854" :stroke-dashoffset="854 - (854 * timerProgress / 100)" stroke-linecap="round"
-                                class="transition-all duration-1000 ease-linear" />
-                        </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center">
-                            <span class="text-6xl font-mono font-bold tracking-tighter">{{ formatTime(timeLeft) }}</span>
-                            <span class="text-orange-400 text-xs tracking-widest uppercase mt-2 font-semibold">Focus Mode</span>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-4">
-                        <button v-if="!timerRunning" @click="startTimer(120)" class="px-8 py-3 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-md font-medium">2分钟启动</button>
-                        <button v-if="!timerRunning" @click="startTimer(1500)" class="px-8 py-3 rounded-full bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-900/30 transition font-bold">25分钟专注</button>
-                        <button v-if="timerRunning" @click="stopTimer" class="px-10 py-3 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30 transition border border-red-500/30">停止</button>
-                    </div>
-                </div>
-
-                <!-- 4. 声景视图 (Sonic Scapes) -->
-                <div v-if="view === 'sonic'" key="sonic" class="h-full flex flex-col items-center justify-center max-w-lg mx-auto">
-                    <h2 class="text-2xl font-bold mb-8 text-center">神经声景</h2>
-                    
-                    <div class="grid grid-cols-1 gap-4 w-full">
-                        <!-- 粉红噪音卡片 -->
-                        <div class="pro-glass p-6 rounded-2xl flex items-center justify-between">
-                            <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center">
-                                    <i data-lucide="waves" class="w-5 h-5 text-pink-400"></i>
-                                </div>
-                                <div>
-                                    <div class="font-medium">Pink Noise</div>
-                                    <div class="text-xs text-slate-500">模拟雨声，平复焦虑</div>
-                                </div>
-                            </div>
-                            <button @click="toggleAudio('pink')" :class="audioState.pink ? 'bg-pink-500 text-white' : 'bg-white/5 text-slate-400'" class="p-3 rounded-full transition-all">
-                                <i :data-lucide="audioState.pink ? 'pause' : 'play'" class="w-5 h-5 fill-current"></i>
-                            </button>
-                        </div>
-
-                        <!-- 布朗噪音卡片 -->
-                        <div class="pro-glass p-6 rounded-2xl flex items-center justify-between">
-                            <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 rounded-full bg-amber-900/40 flex items-center justify-center">
-                                    <i data-lucide="zap-off" class="w-5 h-5 text-amber-500"></i>
-                                </div>
-                                <div>
-                                    <div class="font-medium">Brown Noise</div>
-                                    <div class="text-xs text-slate-500">低频轰鸣，深度屏蔽</div>
-                                </div>
-                            </div>
-                            <button @click="toggleAudio('brown')" :class="audioState.brown ? 'bg-amber-600 text-white' : 'bg-white/5 text-slate-400'" class="p-3 rounded-full transition-all">
-                                <i :data-lucide="audioState.brown ? 'pause' : 'play'" class="w-5 h-5 fill-current"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <p class="mt-8 text-xs text-slate-500 text-center max-w-xs">
-                        * 使用 Web Audio API 本地生成，不消耗流量，隐私安全。建议佩戴耳机。
-                    </p>
-                </div>
-
-            </transition>
-        </div>
-    </main>
-
-    <!-- ================= 设置模态框 (Neural Engine) ================= -->
     <transition name="fade-slide">
-        <div v-if="showSettings || !apiKey" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4">
-            <div class="w-full max-w-lg pro-glass bg-charcoal rounded-3xl p-8 border border-white/10 shadow-2xl transform transition-all">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-xl font-bold flex items-center gap-2">
-                        <i data-lucide="cpu" class="text-blue-500"></i> Neural Engine
-                    </h2>
-                    <button v-if="apiKey" @click="showSettings = false" class="p-2 hover:bg-white/10 rounded-full transition">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
+        <div v-if="!apiKey || view === 'settings'" class="absolute inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-6">
+            <div class="glass-panel w-full max-w-md rounded-3xl p-8 transform transition-all">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-2xl font-bold text-white tracking-tight">系统核心配置</h2>
+                    <button v-if="apiKey" @click="view = 'home'" class="p-2 rounded-full hover:bg-white/10"><i data-lucide="x"></i></button>
                 </div>
 
                 <div class="space-y-6">
-                    <!-- API Key Input -->
-                    <div class="space-y-2">
-                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Gemini API Key</label>
-                        <input type="password" v-model="tempKey" placeholder="sk-..." class="pro-input w-full p-4 rounded-xl text-white">
-                        <p class="text-[10px] text-slate-500">密钥仅存储在您的设备本地 (Local Storage)。</p>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">Gemini API Key</label>
+                        <input type="password" v-model="tempKey" placeholder="sk-..." class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">选择模型 (Model)</label>
+                        <div class="relative">
+                            <select v-model="selectedModel" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-indigo-500">
+                                <option value="gemini-1.5-flash">Gemini 1.5 Flash (快速/经济)</option>
+                                <option value="gemini-1.5-pro">Gemini 1.5 Pro (更聪明/推荐)</option>
+                                <option value="gemini-1.0-pro">Gemini 1.0 Pro (经典)</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="absolute right-4 top-3.5 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2">推荐使用 1.5 Pro 以获得最佳的“心理咨询”体验。</p>
                     </div>
 
-                    <!-- Model Selection -->
-                    <div class="space-y-2">
-                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">选择模型</label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <button @click="selectedModel = 'gemini-1.5-flash'" 
-                                :class="selectedModel === 'gemini-1.5-flash' ? 'bg-blue-600 border-blue-500' : 'bg-white/5 border-transparent hover:bg-white/10'"
-                                class="p-4 rounded-xl border text-left transition-all">
-                                <div class="font-bold text-sm mb-1">Flash 1.5</div>
-                                <div class="text-[10px] opacity-70">极速响应，适合日常</div>
-                            </button>
-                            <button @click="selectedModel = 'gemini-1.5-pro'" 
-                                :class="selectedModel === 'gemini-1.5-pro' ? 'bg-purple-600 border-purple-500' : 'bg-white/5 border-transparent hover:bg-white/10'"
-                                class="p-4 rounded-xl border text-left transition-all">
-                                <div class="font-bold text-sm mb-1">Pro 1.5</div>
-                                <div class="text-[10px] opacity-70">深度逻辑，适合复杂任务</div>
-                            </button>
-                        </div>
-                        <!-- Custom Model Input -->
-                        <div class="mt-2 relative">
-                             <input type="text" v-model="customModel" placeholder="或输入自定义模型 ID (如 gemini-1.0-pro)" 
-                                @input="selectedModel = customModel"
-                                class="pro-input w-full p-3 pl-10 rounded-lg text-sm text-slate-300">
-                             <i data-lucide="terminal" class="absolute left-3 top-3 w-4 h-4 text-slate-500"></i>
-                        </div>
-                    </div>
-
-                    <button @click="saveSettings" class="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-slate-200 transition mt-4">
-                        保存配置
+                    <button @click="saveSettings" :disabled="!tempKey" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-4 rounded-xl shadow-lg shadow-indigo-900/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4">
+                        连接神经网络
                     </button>
+                    
+                    <div class="pt-4 border-t border-white/5 text-center">
+                        <button @click="clearKey" v-if="apiKey" class="text-xs text-red-400 hover:text-red-300 transition">断开连接 / 清除数据</button>
+                    </div>
                 </div>
             </div>
         </div>
     </transition>
 
+    <header v-if="apiKey" class="px-6 pt-12 pb-4 flex justify-between items-center z-10 shrink-0">
+        <div class="flex flex-col">
+            <span class="text-xs text-indigo-300 font-medium tracking-widest uppercase mb-0.5">FlowState</span>
+            <span class="text-lg font-semibold text-white">{{ greeting }}</span>
+        </div>
+        <button @click="view = 'settings'" class="w-10 h-10 rounded-full glass-btn flex items-center justify-center">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-slate-300"></i>
+        </button>
+    </header>
+
+    <main v-if="apiKey" class="flex-1 relative overflow-y-auto no-scrollbar px-4 pb-24">
+        
+        <transition name="fade-slide" mode="out-in">
+            <div v-if="view === 'home'" key="home" class="flex flex-col gap-6 h-full justify-center pb-20">
+                
+                <div class="glass-panel rounded-3xl p-6 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-purple-500"></div>
+                    <h3 class="text-sm text-slate-400 mb-6">目前的能量状态？</h3>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <div class="flex justify-between text-xs mb-2">
+                                <span class="text-slate-500">身体能量</span>
+                                <span :class="energyColor">{{ energyLevel }}%</span>
+                            </div>
+                            <input type="range" v-model="energyLevel" min="0" max="100" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs mb-2">
+                                <span class="text-slate-500">心情</span>
+                                <span class="text-indigo-300">{{ moodText }}</span>
+                            </div>
+                            <input type="range" v-model="moodLevel" min="0" max="100" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-white/5 text-xs text-slate-400 italic">
+                        {{ energyInsight }}
+                    </div>
+                </div>
+
+                <div class="flex-1 flex items-center justify-center py-4">
+                    <button @click="startPanicMode" class="relative group w-64 h-64 rounded-full flex flex-col items-center justify-center transition-transform active:scale-95">
+                        <div class="absolute inset-0 rounded-full bg-indigo-500/20 blur-3xl group-hover:bg-indigo-500/30 transition-all duration-700 panic-btn-glow"></div>
+                        <div class="relative z-10 glass-panel w-56 h-56 rounded-full flex flex-col items-center justify-center border border-indigo-500/30">
+                            <i data-lucide="zap" class="w-10 h-10 text-indigo-300 mb-2"></i>
+                            <span class="text-2xl font-bold text-white tracking-tight">解冻</span>
+                            <span class="text-xs text-indigo-200/60 mt-1">我卡住了</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <div v-else-if="view === 'schedule'" key="schedule" class="h-full">
+                <div class="mb-6 flex justify-between items-end">
+                    <h2 class="text-2xl font-bold">流体日程</h2>
+                    <button @click="showAddTask = true" class="p-2 bg-indigo-600 rounded-xl text-white hover:bg-indigo-500 transition">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap content-start gap-4 h-full overflow-y-auto pb-32">
+                    <div v-if="filteredTasks.length === 0" class="w-full text-center py-20 text-slate-500">
+                        <p class="mb-2">水面很平静。</p>
+                        <p class="text-xs opacity-50">享受这一刻的宁静，或者添加一个小气泡。</p>
+                    </div>
+
+                    <div v-for="task in filteredTasks" :key="task.id" 
+                         @click="focusTask(task)"
+                         class="liquid-bubble rounded-full flex items-center justify-center text-center p-4 cursor-pointer hover:bg-white/10 transition-colors relative"
+                         :style="getBubbleStyle(task)">
+                        <span class="font-medium text-sm leading-tight select-none">{{ task.title }}</span>
+                        <div v-if="task.isUrgent" class="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-ping"></div>
+                    </div>
+                </div>
+
+                <div v-if="showAddTask" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
+                    <div class="glass-panel w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 animate-slide-up">
+                        <h3 class="font-bold mb-4">放置一个新的气泡</h3>
+                        <input v-model="newTaskTitle" placeholder="要做什么？" class="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white mb-4 outline-none focus:border-indigo-500">
+                        
+                        <div class="flex gap-2 mb-6">
+                            <button @click="newTaskPriority = 'low'" :class="newTaskPriority === 'low' ? 'bg-blue-500/20 border-blue-500' : 'border-white/10'" class="flex-1 py-2 rounded-lg border text-xs">小气泡</button>
+                            <button @click="newTaskPriority = 'medium'" :class="newTaskPriority === 'medium' ? 'bg-indigo-500/20 border-indigo-500' : 'border-white/10'" class="flex-1 py-2 rounded-lg border text-xs">中气泡</button>
+                            <button @click="newTaskPriority = 'high'" :class="newTaskPriority === 'high' ? 'bg-orange-500/20 border-orange-500' : 'border-white/10'" class="flex-1 py-2 rounded-lg border text-xs">大气泡</button>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button @click="showAddTask = false" class="flex-1 py-3 text-slate-400">取消</button>
+                            <button @click="addTask" :disabled="!newTaskTitle" class="flex-1 bg-white text-black font-bold rounded-xl py-3 disabled:opacity-50">放入水中</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-else-if="view === 'chat'" key="chat" class="flex flex-col h-full relative">
+                <div ref="chatContainer" class="flex-1 overflow-y-auto px-2 pb-4 space-y-6">
+                    <div v-for="(msg, index) in chatHistory" :key="index" :class="msg.role === 'user' ? 'items-end' : 'items-start'" class="flex flex-col">
+                        <div :class="msg.role === 'user' ? 'bg-indigo-600 rounded-tr-sm' : 'glass-panel rounded-tl-sm'" class="max-w-[85%] rounded-2xl px-5 py-4 text-sm leading-relaxed shadow-lg">
+                            <div v-if="msg.role === 'assistant'" v-html="renderMarkdown(msg.content)"></div>
+                            <div v-else>{{ msg.content }}</div>
+                        </div>
+                    </div>
+                    
+                    <div v-if="isAiThinking" class="flex items-center gap-2 text-indigo-300 text-xs ml-4">
+                        <i data-lucide="loader-2" class="animate-spin w-3 h-3"></i>
+                        <span>Flow AI 正在思考最温柔的建议...</span>
+                    </div>
+                </div>
+
+                <div class="glass-panel border-t-0 border-x-0 border-b-0 rounded-t-3xl p-4 mt-2">
+                    
+                    <div v-if="quickReplies.length > 0" class="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-2">
+                        <button v-for="reply in quickReplies" @click="sendMessage(reply)" class="whitespace-nowrap px-4 py-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-200 text-xs hover:bg-indigo-500/20 transition">
+                            {{ reply }}
+                        </button>
+                    </div>
+
+                    <div class="relative flex items-center gap-2">
+                        <input v-model="userInput" @keyup.enter="sendMessage(userInput)" type="text" placeholder="输入你的想法..." class="flex-1 bg-black/30 border border-white/10 rounded-full px-5 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                        <button @click="sendMessage(userInput)" :disabled="!userInput || isAiThinking" class="p-3 bg-indigo-600 rounded-full text-white hover:bg-indigo-500 disabled:opacity-50 transition shadow-lg shadow-indigo-900/40">
+                            <i data-lucide="arrow-up" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div v-else-if="view === 'focus'" key="focus" class="h-full flex flex-col items-center justify-center text-center px-6">
+                <div class="mb-8">
+                    <span class="text-indigo-400 text-xs font-mono uppercase tracking-widest mb-2 block">当前单一任务</span>
+                    <h2 class="text-3xl font-bold leading-tight">{{ currentFocusTask?.title }}</h2>
+                </div>
+
+                <div v-if="!focusStarted" class="space-y-4 w-full max-w-xs">
+                     <button @click="startFocusSession" class="w-full glass-btn py-4 rounded-2xl text-lg font-bold border-indigo-500/30 text-indigo-100">
+                        开始 (仅 5 分钟)
+                    </button>
+                    <button @click="negotiateTask" class="w-full py-4 text-sm text-slate-400 hover:text-white transition">
+                        太难了，我要和 AI 谈谈
+                    </button>
+                </div>
+
+                <div v-else class="flex flex-col items-center">
+                    <div class="text-6xl font-mono font-bold text-white mb-8 tracking-tighter">{{ formatTime(timeLeft) }}</div>
+                    <p class="text-slate-400 text-sm mb-12">无论结果如何，2分钟后你都可以自由停止。</p>
+                    
+                    <button @click="completeFocus" class="bg-green-600 text-white px-10 py-4 rounded-full font-bold shadow-lg shadow-green-900/40 hover:bg-green-500 transition transform hover:scale-105">
+                        完成第一步
+                    </button>
+                </div>
+                
+                <button @click="view = 'schedule'" class="absolute top-4 left-4 p-2 rounded-full glass-btn">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+        </transition>
+    </main>
+
+    <nav v-if="apiKey && view !== 'settings' && view !== 'focus'" class="absolute bottom-6 left-6 right-6 h-16 glass-panel rounded-2xl flex justify-around items-center z-20 shadow-2xl">
+        <button @click="view = 'home'" :class="view === 'home' ? 'text-indigo-400 scale-110' : 'text-slate-500'" class="transition-all duration-300 p-2">
+            <i data-lucide="activity" class="w-6 h-6"></i>
+        </button>
+        <button @click="view = 'schedule'" :class="view === 'schedule' ? 'text-indigo-400 scale-110' : 'text-slate-500'" class="transition-all duration-300 p-2">
+            <i data-lucide="layout-grid" class="w-6 h-6"></i>
+        </button>
+        <button @click="startPanicMode" :class="view === 'chat' ? 'text-indigo-400 scale-110' : 'text-slate-500'" class="transition-all duration-300 p-2">
+            <i data-lucide="message-square" class="w-6 h-6"></i>
+        </button>
+    </nav>
+
 </div>
 
 <script>
-    const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
+    const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
 
     createApp({
         setup() {
-            // --- 状态管理 ---
-            const view = ref('dashboard');
-            const showSettings = ref(false);
-            const apiKey = ref(localStorage.getItem('df_key') || '');
-            const tempKey = ref(apiKey.value);
-            const selectedModel = ref(localStorage.getItem('df_model') || 'gemini-1.5-flash');
-            const customModel = ref('');
-
-            // AI 相关
-            const userTask = ref('');
-            const steps = ref([]);
-            const currentStep = ref(0);
-            const aiState = ref('input'); // input, executing
-            const isThinking = ref(false);
-
-            // Timer 相关
-            const timeLeft = ref(0);
-            const timerMax = ref(0);
-            const timerRunning = ref(false);
-            let timerInterval = null;
-
-            // Audio 相关
-            const audioCtx = ref(null);
-            const audioState = ref({ pink: false, brown: false });
-            const oscillators = {}; 
-
-            // --- 问候语 ---
-            const greeting = computed(() => {
-                const hour = new Date().getHours();
-                if (hour < 6) return '深夜好，';
-                if (hour < 11) return '早上好，';
-                if (hour < 14) return '中午好，';
-                if (hour < 18) return '下午好，';
-                return '晚上好，';
+            // --- 核心数据 ---
+            const apiKey = ref(localStorage.getItem('flow_api_key') || '');
+            const tempKey = ref('');
+            const selectedModel = ref(localStorage.getItem('flow_model') || 'gemini-1.5-pro');
+            const view = ref('home'); // home, schedule, chat, settings, focus
+            
+            // --- 能量与心情 ---
+            const energyLevel = ref(60);
+            const moodLevel = ref(60);
+            const energyInsight = computed(() => {
+                if (energyLevel.value < 30) return "侦测到低电量模式。FlowState 将为你自动过滤掉 80% 的非必要任务。";
+                if (moodLevel.value < 30) return "心情低落时，生产力不是重点。照顾好自己才是今天的任务。";
+                return "状态不错。保持水一般的流动，不要强迫自己。";
+            });
+            const energyColor = computed(() => {
+                if(energyLevel.value < 30) return 'text-red-400';
+                if(energyLevel.value < 70) return 'text-orange-300';
+                return 'text-green-400';
+            });
+            const moodText = computed(() => {
+                if(moodLevel.value < 20) return "想躲在被子里";
+                if(moodLevel.value < 50) return "有点焦虑";
+                if(moodLevel.value < 80) return "平静";
+                return "感觉很棒";
             });
 
-            // --- UI 辅助 ---
-            const navClass = (v) => {
-                const isActive = view.value === v;
-                return `flex md:flex-row flex-col items-center gap-2 md:px-4 md:py-3 rounded-xl transition-all duration-300 ${
-                    isActive ? 'text-white md:bg-white/10' : 'text-slate-500 hover:text-slate-300'
-                }`;
+            // --- 日程 / 气泡 ---
+            const tasks = ref(JSON.parse(localStorage.getItem('flow_tasks') || '[]'));
+            const showAddTask = ref(false);
+            const newTaskTitle = ref('');
+            const newTaskPriority = ref('medium');
+            
+            // 过滤逻辑：如果能量低，只显示小任务和紧急任务
+            const filteredTasks = computed(() => {
+                if (energyLevel.value < 30) {
+                    return tasks.value.filter(t => t.priority === 'low' || t.isUrgent);
+                }
+                return tasks.value;
+            });
+
+            const addTask = () => {
+                if(!newTaskTitle.value) return;
+                tasks.value.push({
+                    id: Date.now(),
+                    title: newTaskTitle.value,
+                    priority: newTaskPriority.value,
+                    isUrgent: false,
+                    completed: false
+                });
+                saveTasks();
+                newTaskTitle.value = '';
+                showAddTask.value = false;
             };
 
-            const refreshIcons = () => {
-                nextTick(() => lucide.createIcons());
-            };
-            watch(view, refreshIcons);
-            onMounted(refreshIcons);
-
-            // --- 设置逻辑 ---
-            const saveSettings = () => {
-                localStorage.setItem('df_key', tempKey.value);
-                localStorage.setItem('df_model', selectedModel.value);
-                apiKey.value = tempKey.value;
-                showSettings.value = false;
-            };
-
-            // --- AI 核心逻辑 ---
-            const generateSteps = async () => {
-                isThinking.value = true;
+            const getBubbleStyle = (task) => {
+                let size = '100px';
+                if(task.priority === 'low') size = '80px';
+                if(task.priority === 'high') size = '130px';
                 
-                // 模拟 Prompt Engineering (CBT 疗法)
-                const systemPrompt = `你是一个专业的认知行为治疗(CBT)辅助AI。目标：帮助执行功能障碍用户启动。
-                策略：将任务拆解为${userTask.value.length > 20 ? '5-7' : '3-5'}个微小步骤。
-                规则：
-                1. 第一步必须是物理上的、无脑的动作（如"坐起来"、"打开电脑"）。
-                2. 语气简洁、有力、不废话。
-                3. 请只返回纯 JSON 字符串数组。
-                任务：${userTask.value}`;
+                // 随机微调位置，产生自然感
+                const randomDelay = (task.id % 5) + 's';
+                return {
+                    width: size,
+                    height: size,
+                    animationDelay: randomDelay,
+                    // 紧急任务带点红色光晕
+                    boxShadow: task.isUrgent ? '0 0 20px rgba(249, 115, 22, 0.2)' : 'none'
+                };
+            };
+
+            // --- 专注 / 计时器 ---
+            const currentFocusTask = ref(null);
+            const focusStarted = ref(false);
+            const timeLeft = ref(300); // 5分钟
+            let timerInterval = null;
+
+            const focusTask = (task) => {
+                currentFocusTask.value = task;
+                view.value = 'focus';
+                focusStarted.value = false;
+            };
+
+            const startFocusSession = () => {
+                focusStarted.value = true;
+                timeLeft.value = 300; // 5 mins
+                timerInterval = setInterval(() => {
+                    if(timeLeft.value > 0) timeLeft.value--;
+                    else clearInterval(timerInterval);
+                }, 1000);
+            };
+
+            const completeFocus = () => {
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#6366f1', '#a855f7', '#ec4899'] });
+                tasks.value = tasks.value.filter(t => t.id !== currentFocusTask.value.id);
+                saveTasks();
+                clearInterval(timerInterval);
+                setTimeout(() => view.value = 'schedule', 1500);
+            };
+
+            const negotiateTask = () => {
+                // 带着任务跳转去聊天
+                startPanicMode(`我不想做 "${currentFocusTask.value.title}"，我觉得太难了。`);
+            };
+
+            // --- 聊天 / AI ---
+            const chatHistory = ref([]);
+            const userInput = ref('');
+            const isAiThinking = ref(false);
+            const quickReplies = ref([]);
+            const chatContainer = ref(null);
+
+            const SYSTEM_PROMPT = `你不是一个助手，你是一个极度温柔、富有同情心的CBT（认知行为疗法）治疗师和谈判专家。
+            你的核心理念：
+            1. "拒绝羞耻感"：用户没做完任务是正常的，不要责怪。
+            2. "只关注第一步"：将任务切碎到荒谬的小（例如："只是站起来"）。
+            3. "情绪先行"：先处理情绪，再处理任务。
+            
+            当用户说"我不想做"时，你要进行"谈判"，例如："那我们只做2分钟？" 或者 "我们只做最简单的一步？"。
+            请用简短、口语化、温暖的中文回答。
+            不要长篇大论。一次只给一个建议或一个问题。
+            如果用户面临DDL，告诉他们："我们只需要写个标题，不用写完。"
+            `;
+
+            const startPanicMode = (initialMsg = null) => {
+                view.value = 'chat';
+                chatHistory.value = []; // 清空之前的对话
+                quickReplies.value = ['我不知道做什么', '我很焦虑', '我不想动'];
+                
+                // 初始问候
+                chatHistory.value.push({
+                    role: 'assistant',
+                    content: "深呼吸。我现在就在这里。无论发生什么都没关系。<br>怎么了？是卡住了，还是单纯觉得累？"
+                });
+
+                if (initialMsg) {
+                    userInput.value = initialMsg;
+                    sendMessage(initialMsg);
+                }
+            };
+
+            const sendMessage = async (content) => {
+                if (!content) return;
+                
+                // 用户消息
+                chatHistory.value.push({ role: 'user', content: content });
+                userInput.value = '';
+                quickReplies.value = []; // 清除建议
+                isAiThinking.value = true;
+                scrollToBottom();
 
                 try {
+                    // 构建 API 请求
+                    const historyForApi = chatHistory.value.map(m => ({
+                        role: m.role === 'assistant' ? 'model' : 'user',
+                        parts: [{ text: m.content }]
+                    }));
+
+                    // 插入 System Prompt (Gemini API 方式略有不同，这里用简单的 User 预设方式，或者 system instruction 如果模型支持)
+                    // 为了兼容性，我们将 System Prompt 放在最前面作为 user 消息，或者使用 systemInstruction 字段 (beta)
+                    
+                    const payload = {
+                        contents: historyForApi,
+                        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
+                    };
+
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel.value}:generateContent?key=${apiKey.value}`;
+                    
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: systemPrompt }] }]
-                        })
+                        body: JSON.stringify(payload)
                     });
-                    
-                    const data = await response.json();
-                    if(data.error) throw new Error(data.error.message);
 
-                    let text = data.candidates[0].content.parts[0].text;
-                    // 清理 markdown
-                    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const data = await response.json();
                     
-                    steps.value = JSON.parse(text);
-                    aiState.value = 'executing';
-                    currentStep.value = 0;
+                    if (data.error) throw new Error(data.error.message);
+
+                    const aiText = data.candidates[0].content.parts[0].text;
+                    
+                    chatHistory.value.push({ role: 'assistant', content: aiText });
+                    
+                    // 简单的意图识别，生成 Quick Replies (本地模拟)
+                    if (aiText.includes("洗澡")) quickReplies.value = ["只冲 3 分钟", "只洗脸"];
+                    if (aiText.includes("第一步")) quickReplies.value = ["我可以做到", "还是太难"];
 
                 } catch (e) {
-                    alert('Neural Engine Error: ' + e.message);
+                    chatHistory.value.push({ role: 'assistant', content: `<span class="text-red-300">连接断开了...但这不怪你。可能是网络问题。(${e.message})</span>` });
                 } finally {
-                    isThinking.value = false;
+                    isAiThinking.value = false;
+                    scrollToBottom();
                 }
             };
 
-            const nextStep = () => {
-                confetti({
-                    particleCount: 80,
-                    spread: 60,
-                    origin: { y: 0.7 },
-                    colors: ['#3b82f6', '#ffffff']
+            // --- 工具函数 ---
+            const saveSettings = () => {
+                localStorage.setItem('flow_api_key', tempKey.value);
+                localStorage.setItem('flow_model', selectedModel.value);
+                apiKey.value = tempKey.value;
+                view.value = 'home';
+            };
+            
+            const clearKey = () => {
+                localStorage.removeItem('flow_api_key');
+                apiKey.value = '';
+            };
+
+            const saveTasks = () => localStorage.setItem('flow_tasks', JSON.stringify(tasks.value));
+
+            const scrollToBottom = () => {
+                nextTick(() => {
+                    if (chatContainer.value) chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
                 });
-                
-                if (currentStep.value < steps.value.length - 1) {
-                    setTimeout(() => currentStep.value++, 400);
-                } else {
-                    setTimeout(() => {
-                        alert("流程结束。你已经启动了，保持惯性。");
-                        resetAI();
-                    }, 1000);
-                }
             };
 
-            const resetAI = () => {
-                aiState.value = 'input';
-                steps.value = [];
-                userTask.value = '';
-            };
-
-            const progressPercent = computed(() => {
-                if(steps.value.length === 0) return 0;
-                return ((currentStep.value + 1) / steps.value.length) * 100;
-            });
-
-            // --- 计时器逻辑 ---
-            const startTimer = (seconds) => {
-                timerMax.value = seconds;
-                timeLeft.value = seconds;
-                timerRunning.value = true;
-                timerInterval = setInterval(() => {
-                    if (timeLeft.value > 0) timeLeft.value--;
-                    else stopTimer(true);
-                }, 1000);
-            };
-            const stopTimer = (finished = false) => {
-                clearInterval(timerInterval);
-                timerRunning.value = false;
-                if(finished) {
-                    confetti();
-                    // 播放一个柔和的结束音（可选）
-                }
-            };
             const formatTime = (s) => {
                 const m = Math.floor(s / 60);
                 const sec = s % 60;
-                return `${m < 10 ? '0'+m : m}:${sec < 10 ? '0'+sec : sec}`;
-            };
-            const timerProgress = computed(() => {
-                if(timerMax.value === 0) return 0;
-                return ((timerMax.value - timeLeft.value) / timerMax.value) * 100;
-            });
-
-            // --- 声景逻辑 (Web Audio API) ---
-            const initAudio = () => {
-                if(!audioCtx.value) audioCtx.value = new (window.AudioContext || window.webkitAudioContext)();
-            };
-
-            const createNoise = (type) => {
-                initAudio();
-                const bufferSize = 2 * audioCtx.value.sampleRate;
-                const noiseBuffer = audioCtx.value.createBuffer(1, bufferSize, audioCtx.value.sampleRate);
-                const output = noiseBuffer.getChannelData(0);
-
-                for (let i = 0; i < bufferSize; i++) {
-                    const white = Math.random() * 2 - 1;
-                    if(type === 'pink') {
-                        output[i] = (lastOut + (0.02 * white)) / 1.02;
-                        lastOut = output[i];
-                        output[i] *= 3.5; 
-                    } else { // brown
-                         output[i] = (lastOut + (0.02 * white)) / 1.02;
-                         lastOut = output[i];
-                         output[i] *= 3.5; // 简化版模拟
-                    }
-                }
-                // 真正的 Brown Noise 算法略复杂，这里用简化的滤波器模拟
-                // 为确保单文件简洁性，使用 CreateScriptProcessor 或 Worklet 较复杂
-                // 这里我们使用一种简单的高斯白噪+低通滤波器方案来模拟 Brown Noise
-                
-                const noise = audioCtx.value.createBufferSource();
-                noise.buffer = noiseBuffer;
-                noise.loop = true;
-                
-                // 滤波器
-                const filter = audioCtx.value.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.value = type === 'brown' ? 150 : 500; // Brown更低沉
-
-                // 增益 (音量)
-                const gain = audioCtx.value.createGain();
-                gain.gain.value = 0.05; // 初始音量很小，避免惊吓
-
-                noise.connect(filter);
-                filter.connect(gain);
-                gain.connect(audioCtx.value.destination);
-                
-                return { node: noise, gain: gain };
+                return `${m}:${sec < 10 ? '0'+sec : sec}`;
             };
             
-            // 简单的噪音生成器状态变量
-            let lastOut = 0;
+            const renderMarkdown = (text) => marked.parse(text);
 
-            const toggleAudio = (type) => {
-                initAudio();
-                if(audioCtx.value.state === 'suspended') audioCtx.value.resume();
+            const greeting = computed(() => {
+                const hour = new Date().getHours();
+                if(hour < 6) return "凌晨好，还不睡吗？";
+                if(hour < 12) return "早安";
+                if(hour < 18) return "下午好";
+                return "晚上好";
+            });
 
-                if (audioState.value[type]) {
-                    // 停止
-                    oscillators[type].node.stop();
-                    oscillators[type] = null;
-                    audioState.value[type] = false;
-                } else {
-                    // 开始
-                    // 先关掉其他的
-                    if(type === 'pink' && audioState.value.brown) toggleAudio('brown');
-                    if(type === 'brown' && audioState.value.pink) toggleAudio('pink');
-
-                    const noiseObj = createNoise(type);
-                    noiseObj.node.start();
-                    
-                    // 淡入
-                    noiseObj.gain.gain.exponentialRampToValueAtTime(0.1, audioCtx.value.currentTime + 2);
-                    
-                    oscillators[type] = noiseObj;
-                    audioState.value[type] = true;
-                }
-            };
+            // 初始化图标
+            onMounted(() => {
+                lucide.createIcons();
+                // 自动载入之前的 Key
+                if (apiKey.value) tempKey.value = apiKey.value;
+            });
+            
+            // 视图切换时刷新图标
+            watch(view, () => nextTick(() => lucide.createIcons()));
+            watch(showAddTask, () => nextTick(() => lucide.createIcons()));
 
             return {
-                view, showSettings, apiKey, tempKey, selectedModel, customModel, saveSettings,
-                greeting, navClass,
-                // AI
-                userTask, generateSteps, steps, currentStep, aiState, isThinking, resetAI, nextStep, progressPercent,
-                // Timer
-                timeLeft, timerRunning, startTimer, stopTimer, formatTime, timerProgress,
-                // Audio
-                audioState, toggleAudio
+                apiKey, tempKey, selectedModel, view, saveSettings, clearKey,
+                energyLevel, moodLevel, energyInsight, energyColor, moodText,
+                tasks, filteredTasks, showAddTask, newTaskTitle, newTaskPriority, addTask, getBubbleStyle,
+                currentFocusTask, focusStarted, timeLeft, focusTask, startFocusSession, completeFocus, negotiateTask, formatTime,
+                chatHistory, userInput, sendMessage, isAiThinking, startPanicMode, quickReplies, chatContainer, renderMarkdown, greeting
             };
         }
     }).mount('#app');
