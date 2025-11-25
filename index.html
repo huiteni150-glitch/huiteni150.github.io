@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FlowState</title>
+    <title>MindOS</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,43 +11,52 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
     <style>
-        /* --- 核心视觉定义 --- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
         :root {
             --glass-border: rgba(255, 255, 255, 0.08);
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-highlight: rgba(255, 255, 255, 0.1);
-            --primary-glow: rgba(99, 102, 241, 0.4);
-            --app-bg: #050505;
+            --glass-bg: rgba(20, 20, 25, 0.6);
+            --glass-highlight: rgba(255, 255, 255, 0.03);
+            --primary-glow: #3b82f6;
+            --accent-glow: #8b5cf6;
         }
 
         body {
-            background-color: var(--app-bg);
-            font-family: 'Inter', sans-serif;
-            color: #f8fafc;
-            overflow: hidden; /* 禁止滚动，用内部容器滚动 */
+            background-color: #050507;
+            color: #f3f4f6;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* 动态极光背景 */
-        .aurora-bg {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
+        /* --- 动态背景流体 --- */
+        .ambient-light {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             z-index: -1;
-            background: radial-gradient(circle at 50% 10%, #1e1b4b, transparent 60%),
-                        radial-gradient(circle at 90% 60%, #312e81, transparent 50%),
-                        radial-gradient(circle at 10% 50%, #0f172a, transparent 50%);
-            background-size: 200% 200%;
-            animation: auroraFlow 20s ease-in-out infinite alternate;
+            background: #050507;
         }
-        @keyframes auroraFlow {
-            0% { background-position: 0% 0%; }
-            100% { background-position: 100% 100%; }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s infinite ease-in-out;
+        }
+        .orb-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--primary-glow); animation-delay: 0s; }
+        .orb-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: var(--accent-glow); animation-delay: -5s; }
+        .orb-3 { top: 40%; left: 40%; width: 30vw; height: 30vw; background: #0ea5e9; animation-delay: -10s; opacity: 0.2; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
         }
 
-        /* 玻璃拟态组件 */
+        /* --- 玻璃拟态高级质感 --- */
         .glass-panel {
             background: var(--glass-bg);
             backdrop-filter: blur(24px);
@@ -57,546 +66,590 @@
         }
         
         .glass-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-        .glass-btn:active {
-            transform: scale(0.96);
-        }
-        .glass-btn:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.2);
-        }
+        .glass-btn:active { transform: scale(0.96); }
+        .glass-btn:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.15); }
 
-        /* 液态气泡动画 */
-        .liquid-bubble {
-            animation: floatBubble 6s ease-in-out infinite;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: radial-gradient(120% 120% at 50% 50%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.01) 100%);
-            backdrop-filter: blur(8px);
-        }
-        @keyframes floatBubble {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-10px) scale(1.02); }
-        }
-
-        /* 呼吸灯按钮 (Unfreeze) */
+        /* --- 呼吸灯按钮特效 --- */
         .panic-btn-glow {
             box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
             animation: pulse-blue 2s infinite cubic-bezier(0.66, 0, 0, 1);
         }
         @keyframes pulse-blue {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(99, 102, 241, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+            to { box-shadow: 0 0 0 20px rgba(99, 102, 241, 0); }
         }
 
-        /* 滑块样式自定义 */
-        input[type=range] {
-            -webkit-appearance: none;
-            background: transparent;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 24px; width: 24px;
-            border-radius: 50%;
-            background: #fff;
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
-            margin-top: -10px;
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            height: 4px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 2px;
-        }
-
-        /* 页面切换动画 */
-        .fade-slide-enter-active, .fade-slide-leave-active {
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .fade-slide-enter-from { opacity: 0; transform: translateY(20px) scale(0.98); }
-        .fade-slide-leave-to { opacity: 0; transform: translateY(-20px) scale(0.98); }
-
-        /* Markdown 样式微调 */
-        .prose p { margin-bottom: 0.5rem; line-height: 1.6; }
-        .prose strong { color: #e0e7ff; font-weight: 600; }
-        
-        /* 隐藏滚动条但保留功能 */
+        /* --- 滚动条隐藏 --- */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* --- 动画 --- */
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.4s ease, transform 0.4s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; transform: scale(0.98); }
+        
+        .list-enter-active, .list-leave-active { transition: all 0.4s ease; }
+        .list-enter-from, .list-leave-to { opacity: 0; transform: translateY(20px); }
+
+        /* --- Markdown 样式重置 --- */
+        .prose p { margin-bottom: 0.5em; line-height: 1.6; }
+        .prose strong { color: #fff; font-weight: 600; }
+        
+        /* --- 液体泡泡任务 --- */
+        .bubble-task {
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .bubble-task:hover { transform: translateY(-5px); z-index: 10; }
     </style>
 </head>
-<body>
+<body class="antialiased selection:bg-indigo-500 selection:text-white">
 
-<div id="app" class="h-screen w-screen flex flex-col relative overflow-hidden text-slate-200">
-    
-    <div class="aurora-bg"></div>
+<div id="app" class="h-full w-full flex flex-col relative text-sm md:text-base">
 
-    <transition name="fade-slide">
-        <div v-if="!apiKey || view === 'settings'" class="absolute inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-6">
-            <div class="glass-panel w-full max-w-md rounded-3xl p-8 transform transition-all">
-                <div class="flex items-center justify-between mb-8">
-                    <h2 class="text-2xl font-bold text-white tracking-tight">系统核心配置</h2>
-                    <button v-if="apiKey" @click="view = 'home'" class="p-2 rounded-full hover:bg-white/10"><i data-lucide="x"></i></button>
-                </div>
+    <div class="ambient-light">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
 
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">Gemini API Key</label>
-                        <input type="password" v-model="tempKey" placeholder="sk-..." class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">选择模型 (Model)</label>
-                        <div class="relative">
-                            <select v-model="selectedModel" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-indigo-500">
-                                <option value="gemini-1.5-flash">Gemini 1.5 Flash (快速/经济)</option>
-                                <option value="gemini-1.5-pro">Gemini 1.5 Pro (更聪明/推荐)</option>
-                                <option value="gemini-1.0-pro">Gemini 1.0 Pro (经典)</option>
-                            </select>
-                            <i data-lucide="chevron-down" class="absolute right-4 top-3.5 w-4 h-4 text-slate-400 pointer-events-none"></i>
-                        </div>
-                        <p class="text-xs text-slate-500 mt-2">推荐使用 1.5 Pro 以获得最佳的“心理咨询”体验。</p>
-                    </div>
-
-                    <button @click="saveSettings" :disabled="!tempKey" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-4 rounded-xl shadow-lg shadow-indigo-900/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4">
-                        连接神经网络
-                    </button>
-                    
-                    <div class="pt-4 border-t border-white/5 text-center">
-                        <button @click="clearKey" v-if="apiKey" class="text-xs text-red-400 hover:text-red-300 transition">断开连接 / 清除数据</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </transition>
-
-    <header v-if="apiKey" class="px-6 pt-12 pb-4 flex justify-between items-center z-10 shrink-0">
-        <div class="flex flex-col">
-            <span class="text-xs text-indigo-300 font-medium tracking-widest uppercase mb-0.5">FlowState</span>
-            <span class="text-lg font-semibold text-white">{{ greeting }}</span>
-        </div>
-        <button @click="view = 'settings'" class="w-10 h-10 rounded-full glass-btn flex items-center justify-center">
-            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-slate-300"></i>
-        </button>
-    </header>
-
-    <main v-if="apiKey" class="flex-1 relative overflow-y-auto no-scrollbar px-4 pb-24">
+    <main class="flex-1 relative z-10 overflow-hidden flex flex-col">
         
-        <transition name="fade-slide" mode="out-in">
-            <div v-if="view === 'home'" key="home" class="flex flex-col gap-6 h-full justify-center pb-20">
-                
-                <div class="glass-panel rounded-3xl p-6 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-purple-500"></div>
-                    <h3 class="text-sm text-slate-400 mb-6">目前的能量状态？</h3>
-                    
-                    <div class="space-y-6">
-                        <div>
-                            <div class="flex justify-between text-xs mb-2">
-                                <span class="text-slate-500">身体能量</span>
-                                <span :class="energyColor">{{ energyLevel }}%</span>
-                            </div>
-                            <input type="range" v-model="energyLevel" min="0" max="100" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-xs mb-2">
-                                <span class="text-slate-500">心情</span>
-                                <span class="text-indigo-300">{{ moodText }}</span>
-                            </div>
-                            <input type="range" v-model="moodLevel" min="0" max="100" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
-                        </div>
+        <transition name="fade" mode="out-in">
+            <div v-if="currentView === 'dashboard'" key="dashboard" class="flex flex-col h-full p-6 md:p-12 max-w-4xl mx-auto w-full">
+                <header class="flex justify-between items-start mb-8">
+                    <div>
+                        <h1 class="text-3xl md:text-4xl font-light tracking-tight text-white mb-1">
+                            <span class="font-bold">Mind</span>OS
+                        </h1>
+                        <p class="text-slate-400 font-light">管理阻力，而非时间。</p>
                     </div>
-                    
-                    <div class="mt-6 pt-4 border-t border-white/5 text-xs text-slate-400 italic">
-                        {{ energyInsight }}
-                    </div>
-                </div>
-
-                <div class="flex-1 flex items-center justify-center py-4">
-                    <button @click="startPanicMode" class="relative group w-64 h-64 rounded-full flex flex-col items-center justify-center transition-transform active:scale-95">
-                        <div class="absolute inset-0 rounded-full bg-indigo-500/20 blur-3xl group-hover:bg-indigo-500/30 transition-all duration-700 panic-btn-glow"></div>
-                        <div class="relative z-10 glass-panel w-56 h-56 rounded-full flex flex-col items-center justify-center border border-indigo-500/30">
-                            <i data-lucide="zap" class="w-10 h-10 text-indigo-300 mb-2"></i>
-                            <span class="text-2xl font-bold text-white tracking-tight">解冻</span>
-                            <span class="text-xs text-indigo-200/60 mt-1">我卡住了</span>
-                        </div>
+                    <button @click="currentView = 'settings'" class="glass-btn p-3 rounded-full text-slate-400 hover:text-white">
+                        <i data-lucide="settings" class="w-5 h-5"></i>
                     </button>
-                </div>
-            </div>
+                </header>
 
-            <div v-else-if="view === 'schedule'" key="schedule" class="h-full">
-                <div class="mb-6 flex justify-between items-end">
-                    <h2 class="text-2xl font-bold">流体日程</h2>
-                    <button @click="showAddTask = true" class="p-2 bg-indigo-600 rounded-xl text-white hover:bg-indigo-500 transition">
-                        <i data-lucide="plus" class="w-5 h-5"></i>
+                <div v-if="!dailyCheckIn" class="glass-panel p-6 md:p-8 rounded-3xl mb-8 border-l-4 border-indigo-500">
+                    <h2 class="text-xl font-medium mb-6 text-white">今日校准</h2>
+                    <div class="mb-8">
+                        <label class="block text-slate-400 mb-4 flex justify-between">
+                            <span>能量值 (Energy)</span>
+                            <span class="text-indigo-400">{{ energyLevel }}%</span>
+                        </label>
+                        <input type="range" v-model="energyLevel" min="10" max="100" step="10" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                        <div class="flex justify-between text-xs text-slate-500 mt-2">
+                            <span>只想躺平</span>
+                            <span>状态不错</span>
+                            <span>满血复活</span>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                         <label class="block text-slate-400 mb-4">当前心情 (Mood)</label>
+                         <div class="flex justify-between gap-2">
+                             <button v-for="m in moods" :key="m.val" @click="selectedMood = m.val" 
+                                :class="selectedMood === m.val ? 'bg-indigo-600 border-indigo-400 text-white' : 'border-transparent text-slate-500'"
+                                class="glass-btn flex-1 py-3 rounded-xl transition-all font-medium">
+                                {{ m.label }}
+                             </button>
+                         </div>
+                    </div>
+                    <button @click="submitCheckIn" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-900/30 transition-all active:scale-95">
+                        同步状态
                     </button>
                 </div>
 
-                <div class="flex flex-wrap content-start gap-4 h-full overflow-y-auto pb-32">
-                    <div v-if="filteredTasks.length === 0" class="w-full text-center py-20 text-slate-500">
-                        <p class="mb-2">水面很平静。</p>
-                        <p class="text-xs opacity-50">享受这一刻的宁静，或者添加一个小气泡。</p>
+                <div v-else class="flex-1 flex flex-col gap-6 overflow-y-auto no-scrollbar pb-20">
+                    
+                    <div v-if="energyLevel < 40" class="glass-panel p-6 rounded-2xl border-l-4 border-yellow-500 flex items-start gap-4">
+                        <i data-lucide="battery-low" class="text-yellow-500 w-6 h-6 mt-1"></i>
+                        <div>
+                            <p class="text-yellow-100 font-medium">能量不足预警</p>
+                            <p class="text-slate-400 text-sm mt-1">系统已自动隐藏非必要任务。你现在的唯一目标是照顾好自己。</p>
+                        </div>
                     </div>
 
-                    <div v-for="task in filteredTasks" :key="task.id" 
-                         @click="focusTask(task)"
-                         class="liquid-bubble rounded-full flex items-center justify-center text-center p-4 cursor-pointer hover:bg-white/10 transition-colors relative"
-                         :style="getBubbleStyle(task)">
-                        <span class="font-medium text-sm leading-tight select-none">{{ task.title }}</span>
-                        <div v-if="task.isUrgent" class="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-ping"></div>
-                    </div>
-                </div>
-
-                <div v-if="showAddTask" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
-                    <div class="glass-panel w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 animate-slide-up">
-                        <h3 class="font-bold mb-4">放置一个新的气泡</h3>
-                        <input v-model="newTaskTitle" placeholder="要做什么？" class="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white mb-4 outline-none focus:border-indigo-500">
+                    <button @click="startUnfreeze" class="group relative w-full aspect-[4/3] md:aspect-[3/1] rounded-[2rem] overflow-hidden flex flex-col items-center justify-center transition-all hover:scale-[1.01] active:scale-[0.99]">
+                        <div class="absolute inset-0 bg-gradient-to-br from-indigo-600 to-violet-700 opacity-90 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="absolute inset-0 panic-btn-glow rounded-[2rem]"></div>
+                        <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22 opacity=%220.5%22/%3E%3C/svg%3E')"></div>
                         
-                        <div class="flex gap-2 mb-6">
-                            <button @click="newTaskPriority = 'low'" :class="newTaskPriority === 'low' ? 'bg-blue-500/20 border-blue-500' : 'border-white/10'" class="flex-1 py-2 rounded-lg border text-xs">小气泡</button>
-                            <button @click="newTaskPriority = 'medium'" :class="newTaskPriority === 'medium' ? 'bg-indigo-500/20 border-indigo-500' : 'border-white/10'" class="flex-1 py-2 rounded-lg border text-xs">中气泡</button>
-                            <button @click="newTaskPriority = 'high'" :class="newTaskPriority === 'high' ? 'bg-orange-500/20 border-orange-500' : 'border-white/10'" class="flex-1 py-2 rounded-lg border text-xs">大气泡</button>
+                        <div class="relative z-10 text-center">
+                            <i data-lucide="zap" class="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 text-white drop-shadow-lg"></i>
+                            <span class="block text-2xl md:text-3xl font-bold text-white tracking-wide drop-shadow-md">我卡住了</span>
+                            <span class="block text-indigo-200 text-sm mt-2 font-medium">点击这里，我们只迈出一小步</span>
                         </div>
+                    </button>
 
-                        <div class="flex gap-3">
-                            <button @click="showAddTask = false" class="flex-1 py-3 text-slate-400">取消</button>
-                            <button @click="addTask" :disabled="!newTaskTitle" class="flex-1 bg-white text-black font-bold rounded-xl py-3 disabled:opacity-50">放入水中</button>
-                        </div>
+                    <div v-if="activeMicroTask" class="glass-panel p-6 rounded-3xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+                        <h3 class="text-slate-400 text-xs tracking-wider uppercase mb-2">Current Step</h3>
+                        <p class="text-2xl font-semibold text-white mb-6">{{ activeMicroTask }}</p>
+                        <button @click="completeMicroTask" class="glass-btn w-full py-3 rounded-xl flex items-center justify-center gap-2 text-green-400 hover:bg-green-500/10">
+                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                            我做到了
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <button @click="currentView = 'schedule'" class="glass-panel p-5 rounded-2xl text-left hover:bg-white/5 transition">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="p-2 rounded-full bg-blue-500/20 text-blue-300"><i data-lucide="layout-grid" class="w-5 h-5"></i></div>
+                                <span class="text-2xl font-bold">{{ tasks.filter(t => !t.completed).length }}</span>
+                            </div>
+                            <div class="font-medium">流体日程</div>
+                            <div class="text-xs text-slate-400">自动弹性调整</div>
+                        </button>
+                         <button @click="currentView = 'history'" class="glass-panel p-5 rounded-2xl text-left hover:bg-white/5 transition">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="p-2 rounded-full bg-purple-500/20 text-purple-300"><i data-lucide="archive" class="w-5 h-5"></i></div>
+                                <span class="text-2xl font-bold">{{ tasks.filter(t => t.completed).length }}</span>
+                            </div>
+                            <div class="font-medium">成就归档</div>
+                            <div class="text-xs text-slate-400">没有羞耻感</div>
+                        </button>
                     </div>
                 </div>
             </div>
+        </transition>
 
-            <div v-else-if="view === 'chat'" key="chat" class="flex flex-col h-full relative">
-                <div ref="chatContainer" class="flex-1 overflow-y-auto px-2 pb-4 space-y-6">
-                    <div v-for="(msg, index) in chatHistory" :key="index" :class="msg.role === 'user' ? 'items-end' : 'items-start'" class="flex flex-col">
-                        <div :class="msg.role === 'user' ? 'bg-indigo-600 rounded-tr-sm' : 'glass-panel rounded-tl-sm'" class="max-w-[85%] rounded-2xl px-5 py-4 text-sm leading-relaxed shadow-lg">
-                            <div v-if="msg.role === 'assistant'" v-html="renderMarkdown(msg.content)"></div>
+        <transition name="list">
+            <div v-if="currentView === 'chat'" key="chat" class="absolute inset-0 z-50 bg-[#050507] flex flex-col">
+                <div class="px-6 py-4 glass-panel border-b-0 flex justify-between items-center">
+                    <button @click="currentView = 'dashboard'" class="p-2 rounded-full hover:bg-white/10 text-slate-400">
+                        <i data-lucide="chevron-left" class="w-6 h-6"></i>
+                    </button>
+                    <span class="font-medium text-slate-200">AI 辅助模式</span>
+                    <div class="w-8"></div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth" ref="chatContainer">
+                    <div v-for="(msg, index) in chatHistory" :key="index" :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                        <div :class="msg.role === 'user' 
+                            ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-sm' 
+                            : 'glass-panel text-slate-200 rounded-2xl rounded-tl-sm border-none bg-white/5'"
+                            class="max-w-[85%] px-5 py-3 text-base leading-relaxed shadow-sm">
+                            <div v-if="msg.role === 'ai'" v-html="renderMarkdown(msg.content)" class="prose prose-invert prose-sm"></div>
                             <div v-else>{{ msg.content }}</div>
                         </div>
                     </div>
-                    
-                    <div v-if="isAiThinking" class="flex items-center gap-2 text-indigo-300 text-xs ml-4">
-                        <i data-lucide="loader-2" class="animate-spin w-3 h-3"></i>
-                        <span>Flow AI 正在思考最温柔的建议...</span>
+                    <div v-if="isAiThinking" class="flex justify-start">
+                         <div class="glass-panel px-5 py-4 rounded-2xl rounded-tl-sm flex gap-2 items-center">
+                             <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                             <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                             <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                         </div>
                     </div>
                 </div>
 
-                <div class="glass-panel border-t-0 border-x-0 border-b-0 rounded-t-3xl p-4 mt-2">
-                    
-                    <div v-if="quickReplies.length > 0" class="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-2">
-                        <button v-for="reply in quickReplies" @click="sendMessage(reply)" class="whitespace-nowrap px-4 py-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-200 text-xs hover:bg-indigo-500/20 transition">
-                            {{ reply }}
+                <div class="p-4 glass-panel border-t border-white/10">
+                    <div v-if="suggestedActions.length > 0 && !isAiThinking" class="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-2">
+                        <button v-for="action in suggestedActions" @click="handleAction(action)" class="whitespace-nowrap px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs md:text-sm hover:bg-white/10 text-indigo-300 transition-colors">
+                            {{ action.label }}
                         </button>
                     </div>
 
                     <div class="relative flex items-center gap-2">
-                        <input v-model="userInput" @keyup.enter="sendMessage(userInput)" type="text" placeholder="输入你的想法..." class="flex-1 bg-black/30 border border-white/10 rounded-full px-5 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition shadow-inner">
-                        <button @click="sendMessage(userInput)" :disabled="!userInput || isAiThinking" class="p-3 bg-indigo-600 rounded-full text-white hover:bg-indigo-500 disabled:opacity-50 transition shadow-lg shadow-indigo-900/40">
+                        <input v-model="userInput" @keyup.enter="sendMessage" type="text" placeholder="输入你的想法..." class="w-full bg-black/20 text-white px-5 py-4 rounded-2xl border border-white/10 focus:outline-none focus:border-indigo-500 transition-all placeholder-slate-600">
+                        <button @click="sendMessage" :disabled="!userInput.trim() || isAiThinking" class="absolute right-2 p-2 bg-indigo-600 rounded-xl text-white hover:bg-indigo-500 disabled:opacity-50 transition">
                             <i data-lucide="arrow-up" class="w-5 h-5"></i>
                         </button>
                     </div>
                 </div>
             </div>
-            
-            <div v-else-if="view === 'focus'" key="focus" class="h-full flex flex-col items-center justify-center text-center px-6">
-                <div class="mb-8">
-                    <span class="text-indigo-400 text-xs font-mono uppercase tracking-widest mb-2 block">当前单一任务</span>
-                    <h2 class="text-3xl font-bold leading-tight">{{ currentFocusTask?.title }}</h2>
-                </div>
-
-                <div v-if="!focusStarted" class="space-y-4 w-full max-w-xs">
-                     <button @click="startFocusSession" class="w-full glass-btn py-4 rounded-2xl text-lg font-bold border-indigo-500/30 text-indigo-100">
-                        开始 (仅 5 分钟)
-                    </button>
-                    <button @click="negotiateTask" class="w-full py-4 text-sm text-slate-400 hover:text-white transition">
-                        太难了，我要和 AI 谈谈
-                    </button>
-                </div>
-
-                <div v-else class="flex flex-col items-center">
-                    <div class="text-6xl font-mono font-bold text-white mb-8 tracking-tighter">{{ formatTime(timeLeft) }}</div>
-                    <p class="text-slate-400 text-sm mb-12">无论结果如何，2分钟后你都可以自由停止。</p>
-                    
-                    <button @click="completeFocus" class="bg-green-600 text-white px-10 py-4 rounded-full font-bold shadow-lg shadow-green-900/40 hover:bg-green-500 transition transform hover:scale-105">
-                        完成第一步
-                    </button>
-                </div>
-                
-                <button @click="view = 'schedule'" class="absolute top-4 left-4 p-2 rounded-full glass-btn">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                </button>
-            </div>
-
         </transition>
+
+        <transition name="fade">
+            <div v-if="currentView === 'schedule'" key="schedule" class="flex flex-col h-full p-6">
+                <header class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">流体日程</h2>
+                    <button @click="showAddTask = true" class="glass-btn p-3 rounded-full text-indigo-400 hover:text-indigo-300">
+                        <i data-lucide="plus" class="w-6 h-6"></i>
+                    </button>
+                </header>
+
+                <div class="flex-1 relative">
+                    <div v-if="tasks.filter(t => !t.completed).length === 0" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
+                        <i data-lucide="coffee" class="w-12 h-12 mb-4 opacity-50"></i>
+                        <p>没有积压的任务。</p>
+                        <p class="text-xs mt-2">享受当下的宁静。</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 pb-20">
+                        <div v-for="task in activeTasks" :key="task.id" 
+                             :class="{
+                                'col-span-2 row-span-2': task.priority === 'high',
+                                'opacity-50 scale-95': energyLevel < 40 && task.difficulty === 'hard',
+                                'border-orange-500/50 bg-orange-500/10': task.isDDL,
+                                'border-indigo-500/30 bg-indigo-500/5': !task.isDDL
+                             }"
+                             class="bubble-task glass-panel rounded-[2rem] p-6 flex flex-col justify-between min-h-[160px] relative border cursor-pointer hover:border-indigo-400/50"
+                             @click="openTaskMenu(task)">
+                            
+                            <div v-if="task.isDDL" class="absolute top-4 right-4 text-orange-400 animate-pulse">
+                                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                            </div>
+
+                            <div class="text-lg md:text-xl font-medium leading-tight line-clamp-3">
+                                {{ task.title }}
+                            </div>
+                            
+                            <div class="flex justify-between items-end mt-4">
+                                <span class="text-xs px-2 py-1 rounded-md bg-white/5 text-slate-400">{{ task.difficulty === 'hard' ? '耗能' : '轻松' }}</span>
+                                <span v-if="task.isDDL" class="text-xs text-orange-300">临近死线</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <transition name="fade">
+            <div v-if="currentView === 'history'" key="history" class="flex flex-col h-full p-6">
+                <header class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">成就档案</h2>
+                </header>
+                <div class="flex-1 overflow-y-auto no-scrollbar pb-20">
+                    <div v-for="task in completedTasks" :key="task.id" class="mb-4 glass-panel p-4 rounded-xl flex items-center gap-4 opacity-60 hover:opacity-100 transition">
+                         <div class="p-2 rounded-full bg-green-500/20 text-green-400">
+                             <i data-lucide="check" class="w-4 h-4"></i>
+                         </div>
+                         <div class="flex-1">
+                             <div class="text-slate-300 line-through">{{ task.title }}</div>
+                             <div class="text-xs text-slate-500">{{ new Date(task.completedAt).toLocaleDateString() }}</div>
+                         </div>
+                         <button @click="restoreTask(task)" class="text-xs text-slate-500 hover:text-white px-3 py-1 border border-white/10 rounded-lg">撤销</button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <transition name="fade">
+            <div v-if="currentView === 'settings'" class="absolute inset-0 z-[60] bg-[#050507] p-6 flex flex-col">
+                <header class="flex items-center mb-8">
+                    <button @click="currentView = 'dashboard'" class="p-2 -ml-2 text-slate-400 hover:text-white"><i data-lucide="arrow-left"></i></button>
+                    <h2 class="text-xl font-bold ml-2">系统设置</h2>
+                </header>
+                
+                <div class="space-y-6 max-w-lg mx-auto w-full">
+                    <div class="glass-panel p-6 rounded-2xl">
+                        <label class="block text-sm font-medium text-slate-400 mb-2">Gemini API Key</label>
+                        <input v-model="tempKey" type="password" placeholder="AIzaSy..." class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:outline-none transition">
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-2xl">
+                        <label class="block text-sm font-medium text-slate-400 mb-2">AI Model Selection</label>
+                        <p class="text-xs text-slate-500 mb-3">选择预设或直接输入最新模型 ID。</p>
+                        
+                        <div class="relative">
+                            <input v-model="selectedModel" list="model-presets" type="text" class="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-indigo-500 focus:outline-none transition" placeholder="输入或选择模型...">
+                            <datalist id="model-presets">
+                                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fastest/New)</option>
+                                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Reasoning)</option>
+                                <option value="gemini-1.5-flash">Gemini 1.5 Flash (Standard)</option>
+                                <option value="gemini-2.5-pro-preview">Gemini 2.5 Pro (Future)</option>
+                                <option value="gemini-3.0-pro">Gemini 3.0 Pro (Future)</option>
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <button @click="saveSettings" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-lg transition">
+                        保存配置
+                    </button>
+                    <button @click="clearData" class="w-full py-4 text-red-400 hover:bg-red-500/10 rounded-xl font-medium transition text-xs">
+                        清除所有本地数据
+                    </button>
+                </div>
+            </div>
+        </transition>
+
+        <transition name="fade">
+            <div v-if="showAddTask" class="absolute inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+                <div class="glass-panel p-6 rounded-3xl w-full max-w-md" @click.stop>
+                    <h3 class="text-xl font-bold mb-4">添加新气泡</h3>
+                    <input v-model="newTask.title" placeholder="要做什么？" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white mb-4 focus:outline-none focus:border-indigo-500">
+                    
+                    <div class="flex gap-4 mb-6">
+                        <button @click="newTask.difficulty = 'easy'" :class="newTask.difficulty === 'easy' ? 'bg-green-500/20 border-green-500 text-green-300' : 'bg-white/5 border-transparent text-slate-400'" class="flex-1 py-3 rounded-xl border text-sm font-medium transition">轻松</button>
+                        <button @click="newTask.difficulty = 'hard'" :class="newTask.difficulty === 'hard' ? 'bg-orange-500/20 border-orange-500 text-orange-300' : 'bg-white/5 border-transparent text-slate-400'" class="flex-1 py-3 rounded-xl border text-sm font-medium transition">耗能</button>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 mb-6 cursor-pointer" @click="newTask.isDDL = !newTask.isDDL">
+                        <div :class="newTask.isDDL ? 'bg-indigo-500' : 'bg-slate-700'" class="w-6 h-6 rounded flex items-center justify-center transition">
+                            <i v-if="newTask.isDDL" data-lucide="check" class="w-4 h-4 text-white"></i>
+                        </div>
+                        <span class="text-slate-300 text-sm">这是一个可怕的 DDL</span>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button @click="showAddTask = false" class="flex-1 py-3 bg-slate-700 rounded-xl text-slate-300">取消</button>
+                        <button @click="addTask" :disabled="!newTask.title" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold disabled:opacity-50">漂浮</button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
     </main>
 
-    <nav v-if="apiKey && view !== 'settings' && view !== 'focus'" class="absolute bottom-6 left-6 right-6 h-16 glass-panel rounded-2xl flex justify-around items-center z-20 shadow-2xl">
-        <button @click="view = 'home'" :class="view === 'home' ? 'text-indigo-400 scale-110' : 'text-slate-500'" class="transition-all duration-300 p-2">
-            <i data-lucide="activity" class="w-6 h-6"></i>
+    <nav v-if="currentView !== 'settings' && currentView !== 'chat'" class="absolute bottom-6 left-1/2 -translate-x-1/2 glass-panel rounded-full px-6 py-3 flex gap-8 items-center z-30 shadow-2xl">
+        <button @click="currentView = 'dashboard'" :class="currentView === 'dashboard' ? 'text-white scale-110' : 'text-slate-500'" class="transition-all duration-300">
+            <i data-lucide="home" class="w-6 h-6"></i>
         </button>
-        <button @click="view = 'schedule'" :class="view === 'schedule' ? 'text-indigo-400 scale-110' : 'text-slate-500'" class="transition-all duration-300 p-2">
+        <button @click="startUnfreeze" class="bg-indigo-600 text-white p-3 rounded-full -mt-8 shadow-lg shadow-indigo-500/40 hover:scale-105 transition-transform border-4 border-[#050507]">
+            <i data-lucide="zap" class="w-6 h-6"></i>
+        </button>
+        <button @click="currentView = 'schedule'" :class="currentView === 'schedule' ? 'text-white scale-110' : 'text-slate-500'" class="transition-all duration-300">
             <i data-lucide="layout-grid" class="w-6 h-6"></i>
-        </button>
-        <button @click="startPanicMode" :class="view === 'chat' ? 'text-indigo-400 scale-110' : 'text-slate-500'" class="transition-all duration-300 p-2">
-            <i data-lucide="message-square" class="w-6 h-6"></i>
         </button>
     </nav>
 
 </div>
 
 <script>
-    const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+    const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
 
     createApp({
         setup() {
-            // --- 核心数据 ---
-            const apiKey = ref(localStorage.getItem('flow_api_key') || '');
+            // --- 状态管理 ---
+            const currentView = ref('dashboard'); // dashboard, chat, schedule, history, settings
+            const apiKey = ref(localStorage.getItem('mindos_key') || '');
             const tempKey = ref('');
-            const selectedModel = ref(localStorage.getItem('flow_model') || 'gemini-1.5-pro');
-            const view = ref('home'); // home, schedule, chat, settings, focus
+            const selectedModel = ref(localStorage.getItem('mindos_model') || 'gemini-2.0-flash');
             
-            // --- 能量与心情 ---
-            const energyLevel = ref(60);
-            const moodLevel = ref(60);
-            const energyInsight = computed(() => {
-                if (energyLevel.value < 30) return "侦测到低电量模式。FlowState 将为你自动过滤掉 80% 的非必要任务。";
-                if (moodLevel.value < 30) return "心情低落时，生产力不是重点。照顾好自己才是今天的任务。";
-                return "状态不错。保持水一般的流动，不要强迫自己。";
-            });
-            const energyColor = computed(() => {
-                if(energyLevel.value < 30) return 'text-red-400';
-                if(energyLevel.value < 70) return 'text-orange-300';
-                return 'text-green-400';
-            });
-            const moodText = computed(() => {
-                if(moodLevel.value < 20) return "想躲在被子里";
-                if(moodLevel.value < 50) return "有点焦虑";
-                if(moodLevel.value < 80) return "平静";
-                return "感觉很棒";
-            });
+            // 每日打卡
+            const dailyCheckIn = ref(false); // 实际应检查日期
+            const energyLevel = ref(50);
+            const selectedMood = ref('');
+            const moods = [
+                { val: 'anxious', label: '焦虑' },
+                { val: 'tired', label: '疲惫' },
+                { val: 'neutral', label: '平静' },
+                { val: 'excited', label: '兴奋' }
+            ];
 
-            // --- 日程 / 气泡 ---
-            const tasks = ref(JSON.parse(localStorage.getItem('flow_tasks') || '[]'));
+            // 任务数据
+            const tasks = ref(JSON.parse(localStorage.getItem('mindos_tasks')) || []);
             const showAddTask = ref(false);
-            const newTaskTitle = ref('');
-            const newTaskPriority = ref('medium');
-            
-            // 过滤逻辑：如果能量低，只显示小任务和紧急任务
-            const filteredTasks = computed(() => {
-                if (energyLevel.value < 30) {
-                    return tasks.value.filter(t => t.priority === 'low' || t.isUrgent);
-                }
-                return tasks.value;
-            });
+            const newTask = ref({ title: '', difficulty: 'easy', isDDL: false });
+            const activeMicroTask = ref(null); // 当前正在进行的“站起来”这种微任务
 
-            const addTask = () => {
-                if(!newTaskTitle.value) return;
-                tasks.value.push({
-                    id: Date.now(),
-                    title: newTaskTitle.value,
-                    priority: newTaskPriority.value,
-                    isUrgent: false,
-                    completed: false
-                });
-                saveTasks();
-                newTaskTitle.value = '';
-                showAddTask.value = false;
-            };
-
-            const getBubbleStyle = (task) => {
-                let size = '100px';
-                if(task.priority === 'low') size = '80px';
-                if(task.priority === 'high') size = '130px';
-                
-                // 随机微调位置，产生自然感
-                const randomDelay = (task.id % 5) + 's';
-                return {
-                    width: size,
-                    height: size,
-                    animationDelay: randomDelay,
-                    // 紧急任务带点红色光晕
-                    boxShadow: task.isUrgent ? '0 0 20px rgba(249, 115, 22, 0.2)' : 'none'
-                };
-            };
-
-            // --- 专注 / 计时器 ---
-            const currentFocusTask = ref(null);
-            const focusStarted = ref(false);
-            const timeLeft = ref(300); // 5分钟
-            let timerInterval = null;
-
-            const focusTask = (task) => {
-                currentFocusTask.value = task;
-                view.value = 'focus';
-                focusStarted.value = false;
-            };
-
-            const startFocusSession = () => {
-                focusStarted.value = true;
-                timeLeft.value = 300; // 5 mins
-                timerInterval = setInterval(() => {
-                    if(timeLeft.value > 0) timeLeft.value--;
-                    else clearInterval(timerInterval);
-                }, 1000);
-            };
-
-            const completeFocus = () => {
-                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#6366f1', '#a855f7', '#ec4899'] });
-                tasks.value = tasks.value.filter(t => t.id !== currentFocusTask.value.id);
-                saveTasks();
-                clearInterval(timerInterval);
-                setTimeout(() => view.value = 'schedule', 1500);
-            };
-
-            const negotiateTask = () => {
-                // 带着任务跳转去聊天
-                startPanicMode(`我不想做 "${currentFocusTask.value.title}"，我觉得太难了。`);
-            };
-
-            // --- 聊天 / AI ---
+            // 聊天数据
             const chatHistory = ref([]);
             const userInput = ref('');
             const isAiThinking = ref(false);
-            const quickReplies = ref([]);
             const chatContainer = ref(null);
+            const suggestedActions = ref([]);
 
-            const SYSTEM_PROMPT = `你不是一个助手，你是一个极度温柔、富有同情心的CBT（认知行为疗法）治疗师和谈判专家。
-            你的核心理念：
-            1. "拒绝羞耻感"：用户没做完任务是正常的，不要责怪。
-            2. "只关注第一步"：将任务切碎到荒谬的小（例如："只是站起来"）。
-            3. "情绪先行"：先处理情绪，再处理任务。
-            
-            当用户说"我不想做"时，你要进行"谈判"，例如："那我们只做2分钟？" 或者 "我们只做最简单的一步？"。
-            请用简短、口语化、温暖的中文回答。
-            不要长篇大论。一次只给一个建议或一个问题。
-            如果用户面临DDL，告诉他们："我们只需要写个标题，不用写完。"
-            `;
+            // --- 生命周期与工具 ---
+            const renderIcons = () => setTimeout(() => lucide.createIcons(), 50);
+            watch(currentView, renderIcons);
+            onMounted(() => {
+                renderIcons();
+                checkDailyStatus();
+            });
 
-            const startPanicMode = (initialMsg = null) => {
-                view.value = 'chat';
-                chatHistory.value = []; // 清空之前的对话
-                quickReplies.value = ['我不知道做什么', '我很焦虑', '我不想动'];
-                
-                // 初始问候
-                chatHistory.value.push({
-                    role: 'assistant',
-                    content: "深呼吸。我现在就在这里。无论发生什么都没关系。<br>怎么了？是卡住了，还是单纯觉得累？"
+            const checkDailyStatus = () => {
+                const lastCheck = localStorage.getItem('mindos_last_checkin');
+                const today = new Date().toDateString();
+                if (lastCheck === today) dailyCheckIn.value = true;
+            };
+
+            const submitCheckIn = () => {
+                dailyCheckIn.value = true;
+                localStorage.setItem('mindos_last_checkin', new Date().toDateString());
+                confetti({ particleCount: 50, origin: { y: 0.7 }, colors: ['#6366f1', '#8b5cf6'] });
+            };
+
+            const renderMarkdown = (text) => marked.parse(text);
+
+            // --- 任务逻辑 ---
+            const addTask = () => {
+                tasks.value.push({
+                    id: Date.now(),
+                    title: newTask.value.title,
+                    difficulty: newTask.value.difficulty,
+                    isDDL: newTask.value.isDDL,
+                    completed: false,
+                    createdAt: Date.now()
                 });
+                saveTasks();
+                showAddTask.value = false;
+                newTask.value = { title: '', difficulty: 'easy', isDDL: false };
+                confetti({ particleCount: 30, spread: 40, origin: { y: 0.5 } });
+            };
 
-                if (initialMsg) {
-                    userInput.value = initialMsg;
-                    sendMessage(initialMsg);
+            const completeMicroTask = () => {
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                activeMicroTask.value = null;
+                // 如果是在聊天中，触发 AI 询问下一步
+                if(currentView.value === 'chat') {
+                    chatHistory.value.push({ role: 'user', content: '我完成了这一步。下一步是什么？' });
+                    callGemini(chatHistory.value);
                 }
             };
 
-            const sendMessage = async (content) => {
-                if (!content) return;
+            const saveTasks = () => localStorage.setItem('mindos_tasks', JSON.stringify(tasks.value));
+            
+            const activeTasks = computed(() => {
+                let t = tasks.value.filter(task => !task.completed);
+                // 能量过滤逻辑
+                if (energyLevel.value < 30) {
+                    // 低能量模式：只显示简单的，或者必须做的DDL
+                    return t.filter(task => task.difficulty === 'easy' || task.isDDL);
+                }
+                return t;
+            });
+
+            const completedTasks = computed(() => tasks.value.filter(t => t.completed).sort((a,b) => b.completedAt - a.completedAt));
+
+            const restoreTask = (task) => {
+                task.completed = false;
+                task.completedAt = null;
+                saveTasks();
+            };
+
+            const openTaskMenu = (task) => {
+                // 点击任务，不仅是看，而是可以“解冻”这个任务
+                currentView.value = 'chat';
+                chatHistory.value = []; // 清空之前的
                 
-                // 用户消息
-                chatHistory.value.push({ role: 'user', content: content });
+                let prompt = `我想做任务："${task.title}"。`;
+                if (task.isDDL) prompt += " 这是一个紧急的DDL，我很焦虑。";
+                if (energyLevel.value < 40) prompt += " 我今天能量很低。";
+                
+                chatHistory.value.push({ role: 'ai', content: `好的，我们来看看 "${task.title}"。现在的感觉是怎样的？抗拒？害怕？还是单纯不想动？` });
+                suggestedActions.value = [
+                    { label: '觉得太难了', prompt: '这个任务太难了，拆解一下。' },
+                    { label: '只要5分钟', prompt: '我不想做完，能不能只做5分钟？' },
+                    { label: '不想动', prompt: '我完全不想动。' }
+                ];
+            };
+
+            // --- AI 核心 (CBT Logic) ---
+            const startUnfreeze = () => {
+                currentView.value = 'chat';
+                chatHistory.value = [];
+                // 开场白
+                chatHistory.value.push({ 
+                    role: 'ai', 
+                    content: '嗨。看起来你卡住了。没关系，这很正常。\n\n我们现在要做什么？是有一个具体的任务，还是只是觉得一团乱？' 
+                });
+                suggestedActions.value = [
+                    { label: '我要洗澡', prompt: '我得洗澡，但我动不了。' },
+                    { label: '有个DDL', prompt: '我有个DDL要到了，但我还在拖延。' },
+                    { label: '不知道', prompt: '我不知道，我只是很焦虑。' }
+                ];
+            };
+
+            const handleAction = (action) => {
+                userInput.value = action.prompt;
+                sendMessage();
+            };
+
+            const sendMessage = async () => {
+                if (!userInput.value.trim()) return;
+                
+                const userMsg = userInput.value;
+                chatHistory.value.push({ role: 'user', content: userMsg });
                 userInput.value = '';
-                quickReplies.value = []; // 清除建议
+                suggestedActions.value = []; // 清除建议
                 isAiThinking.value = true;
-                scrollToBottom();
+                
+                // 滚动到底部
+                nextTick(() => {
+                    if(chatContainer.value) chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+                });
+
+                await callGemini(chatHistory.value);
+            };
+
+            const callGemini = async (history) => {
+                if (!apiKey.value) {
+                    chatHistory.value.push({ role: 'ai', content: '请先在设置中配置 API Key。' });
+                    isAiThinking.value = false;
+                    return;
+                }
+
+                // 构建 System Prompt (CBT 核心)
+                const systemPrompt = `
+                你是一个专业的CBT（认知行为疗法）辅助AI，也是一个温柔的陪跑教练。
+                用户状态：能量值 ${energyLevel.value}%，心情 ${selectedMood.value || '未知'}。
+                
+                核心原则：
+                1. **拒绝羞耻感**：永远不要责怪用户。
+                2. **只关注第一步**：不要让用户去“完成任务”，只让他做“第一个物理动作”（如站起来、打开文档）。
+                3. **谈判模式**：如果用户抗拒，使用“门槛效应”（只做2分钟，只做5分钟）。
+                4. **切片模式**：如果任务大，切成微小的片。
+                
+                输出要求：
+                - 语气极其口语化、温柔、像个老朋友。
+                - 如果你建议了一个具体的微行动，请在最后用粗体标记，例如：**当前目标：站起来**。
+                - 不要长篇大论，每次只解决一个阻力点。
+                `;
+
+                // 转换历史格式
+                const contents = [
+                    { role: 'user', parts: [{ text: systemPrompt }] },
+                    ...history.map(h => ({
+                        role: h.role === 'ai' ? 'model' : 'user',
+                        parts: [{ text: h.content }]
+                    }))
+                ];
 
                 try {
-                    // 构建 API 请求
-                    const historyForApi = chatHistory.value.map(m => ({
-                        role: m.role === 'assistant' ? 'model' : 'user',
-                        parts: [{ text: m.content }]
-                    }));
-
-                    // 插入 System Prompt (Gemini API 方式略有不同，这里用简单的 User 预设方式，或者 system instruction 如果模型支持)
-                    // 为了兼容性，我们将 System Prompt 放在最前面作为 user 消息，或者使用 systemInstruction 字段 (beta)
-                    
-                    const payload = {
-                        contents: historyForApi,
-                        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
-                    };
-
                     const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel.value}:generateContent?key=${apiKey.value}`;
-                    
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify({ contents: contents })
                     });
-
+                    
                     const data = await response.json();
+                    if(data.error) throw new Error(data.error.message);
                     
-                    if (data.error) throw new Error(data.error.message);
-
                     const aiText = data.candidates[0].content.parts[0].text;
-                    
-                    chatHistory.value.push({ role: 'assistant', content: aiText });
-                    
-                    // 简单的意图识别，生成 Quick Replies (本地模拟)
-                    if (aiText.includes("洗澡")) quickReplies.value = ["只冲 3 分钟", "只洗脸"];
-                    if (aiText.includes("第一步")) quickReplies.value = ["我可以做到", "还是太难"];
+                    chatHistory.value.push({ role: 'ai', content: aiText });
+
+                    // 检测是否包含微任务指令
+                    if (aiText.includes('**当前目标：')) {
+                        const match = aiText.match(/\*\*当前目标：(.*?)\*\*/);
+                        if (match && match[1]) {
+                            activeMicroTask.value = match[1];
+                        }
+                    }
 
                 } catch (e) {
-                    chatHistory.value.push({ role: 'assistant', content: `<span class="text-red-300">连接断开了...但这不怪你。可能是网络问题。(${e.message})</span>` });
+                    chatHistory.value.push({ role: 'ai', content: `连接断开了 (${e.message})。我们可以稍后再试。` });
                 } finally {
                     isAiThinking.value = false;
-                    scrollToBottom();
+                    nextTick(() => {
+                        if(chatContainer.value) chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+                    });
                 }
             };
 
-            // --- 工具函数 ---
+            // --- 设置 ---
             const saveSettings = () => {
-                localStorage.setItem('flow_api_key', tempKey.value);
-                localStorage.setItem('flow_model', selectedModel.value);
+                localStorage.setItem('mindos_key', tempKey.value);
                 apiKey.value = tempKey.value;
-                view.value = 'home';
+                localStorage.setItem('mindos_model', selectedModel.value);
+                currentView.value = 'dashboard';
             };
             
-            const clearKey = () => {
-                localStorage.removeItem('flow_api_key');
-                apiKey.value = '';
-            };
-
-            const saveTasks = () => localStorage.setItem('flow_tasks', JSON.stringify(tasks.value));
-
-            const scrollToBottom = () => {
-                nextTick(() => {
-                    if (chatContainer.value) chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
-                });
-            };
-
-            const formatTime = (s) => {
-                const m = Math.floor(s / 60);
-                const sec = s % 60;
-                return `${m}:${sec < 10 ? '0'+sec : sec}`;
-            };
-            
-            const renderMarkdown = (text) => marked.parse(text);
-
-            const greeting = computed(() => {
-                const hour = new Date().getHours();
-                if(hour < 6) return "凌晨好，还不睡吗？";
-                if(hour < 12) return "早安";
-                if(hour < 18) return "下午好";
-                return "晚上好";
-            });
-
-            // 初始化图标
-            onMounted(() => {
-                lucide.createIcons();
-                // 自动载入之前的 Key
-                if (apiKey.value) tempKey.value = apiKey.value;
-            });
-            
-            // 视图切换时刷新图标
-            watch(view, () => nextTick(() => lucide.createIcons()));
-            watch(showAddTask, () => nextTick(() => lucide.createIcons()));
+            const clearData = () => {
+                if(confirm('确定要清除所有任务和历史吗？')) {
+                    localStorage.clear();
+                    location.reload();
+                }
+            }
 
             return {
-                apiKey, tempKey, selectedModel, view, saveSettings, clearKey,
-                energyLevel, moodLevel, energyInsight, energyColor, moodText,
-                tasks, filteredTasks, showAddTask, newTaskTitle, newTaskPriority, addTask, getBubbleStyle,
-                currentFocusTask, focusStarted, timeLeft, focusTask, startFocusSession, completeFocus, negotiateTask, formatTime,
-                chatHistory, userInput, sendMessage, isAiThinking, startPanicMode, quickReplies, chatContainer, renderMarkdown, greeting
+                currentView, apiKey, tempKey, selectedModel,
+                dailyCheckIn, energyLevel, selectedMood, moods, submitCheckIn,
+                tasks, activeTasks, completedTasks, showAddTask, newTask, addTask, restoreTask, openTaskMenu,
+                activeMicroTask, completeMicroTask,
+                chatHistory, userInput, isAiThinking, sendMessage, startUnfreeze, chatContainer, suggestedActions, handleAction,
+                saveSettings, clearData, renderMarkdown
             };
         }
     }).mount('#app');
